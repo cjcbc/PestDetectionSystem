@@ -13,4 +13,3 @@ public interface UserService {
 
     UserVo getProfile(String token);
 }
-git@github.com:cjcbc/PestDetectionSystem.git
