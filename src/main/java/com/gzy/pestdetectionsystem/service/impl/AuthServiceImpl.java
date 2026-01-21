@@ -47,10 +47,16 @@ public class AuthServiceImpl implements AuthService {
         String encrypted = PasswordUtil.encryptPassword(dto.getPassword(), salt);
 
         Long id = snowflakeIdGenerator.nextId();
+        String username = dto.getUsername();
+
+        //用户名为空则设置为默认昵称
+        if(username == null || username.isBlank()){
+            username = "uid_" + id.toString();
+        }
 
         User user = new User();
         user.setId(id);
-        user.setUsername(dto.getUsername());
+        user.setUsername(username);
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
         user.setPassword(encrypted);
