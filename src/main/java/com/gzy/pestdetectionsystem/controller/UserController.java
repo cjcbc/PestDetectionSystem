@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.controller;
 
+import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
 import com.gzy.pestdetectionsystem.service.AuthService;
@@ -33,6 +34,13 @@ public class UserController {
     public Result<?> register(@RequestBody RegisterDTO dto){
         authService.register(dto);
         return Result.ok("注册成功");
+    }
+
+    @PostMapping("/bind")
+    public Result<?> bind(@RequestBody BindDTO dto){
+        System.out.println("received: " + dto.getEmail());
+        authService.bind(dto);
+        return Result.ok("绑定成功");
     }
 
 }

@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.service.impl;
 
+import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
 import com.gzy.pestdetectionsystem.entity.User;
@@ -11,6 +12,8 @@ import com.gzy.pestdetectionsystem.utils.PasswordUtil;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
 import com.gzy.pestdetectionsystem.vo.UserVo;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -73,9 +76,84 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthException(400, "手机号或邮箱不存在");
         }
         if (!PasswordUtil.verifyPassword(dto.getPassword(), user.getSalt(), user.getPassword())) {
-            throw new AuthException(400, "密码错误");
+            throw new AuthException(401, "密码错误");
         }
         String token = JwtUtil.createToken(user.getId());
         return new UserVo(user.getId(), user.getUsername(), user.getEmail(), user.getPhone(), token);
+    }
+
+
+    //绑定手机号或邮箱
+    public void bind(BindDTO dto) {
+        if (dto.getId() == null){
+            throw new AuthException(402,"用户信息不合法");
+        }
+        if (dto.getBindType() == null){
+            throw new AuthException(403,"不支持的绑定类型");
+        }
+
+        User user = userMapper.selectById(dto.getId());
+
+        //确定要绑定哪个
+        switch (dto.getBindType()) {
+            case PHONE:
+                updatePhone(dto, user);
+                break;
+            case EMAIL:
+                updateEmail(dto, user);
+                break;
+            case BOTH:
+                updatePhone(dto, user);
+                updateEmail(dto, user);
+                break;
+            default:
+                throw new AuthException(406, "不支持的绑定类型");
+        }
+    }
+
+    private void updatePhone(BindDTO dto, User user) {
+        if (dto.getPhone() == null || dto.getPhone().isBlank()) {
+            throw new AuthException(401,"手机号不能为空");
+        }
+        if (user == null) {
+            throw new AuthException(400,"用户不存在");
+        }
+
+        //检查手机号是否重复
+        if (Objects.equals(user.getPhone(), dto.getPhone())){
+            throw new AuthException(409,"手机号重复");
+        }
+        //检查手机号是否已被注册
+        User check = userMapper.selectByPhone(dto.getPhone());
+        if (check != null && !Objects.equals(check.getId(), user.getId())) {
+            throw new AuthException(403,"手机号已存在");
+        }
+
+
+        user.setPhone(dto.getPhone());
+        userMapper.updateById(user);
+    }
+
+    private void updateEmail(BindDTO dto, User user) {
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new AuthException(402, "邮箱不能为空");
+        }
+        if (user == null) {
+            throw new AuthException(400,"用户不存在");
+        }
+
+        //检查邮箱是否重复
+        if (Objects.equals(user.getEmail(), dto.getEmail())){
+            throw new AuthException(409,"邮箱重复");
+        }
+        //检查邮箱是否重已被注册
+        User check = userMapper.selectByEmail(dto.getEmail());
+        if (check != null && !Objects.equals(check.getId(), user.getId())) {
+            throw new AuthException(403,"邮箱已存在");
+        }
+
+
+        user.setEmail(dto.getEmail());
+        userMapper.updateById(user);
     }
 }
