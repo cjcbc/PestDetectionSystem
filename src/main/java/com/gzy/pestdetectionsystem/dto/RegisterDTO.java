@@ -11,8 +11,9 @@ public class RegisterDTO {
 
     private String password;
 
-    private String email;
 
+    //邮件手机号至少选一
+    private String email;
     private String phone;
 }
 

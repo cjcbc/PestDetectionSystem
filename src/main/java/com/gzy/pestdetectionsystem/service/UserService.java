@@ -11,5 +11,5 @@ public interface UserService {
      */
     List<UserVo> getAllUsers();
 
-    UserVo getProfile(String token);
+    // UserVo getProfile(String token);
 }

@@ -13,7 +13,7 @@ import java.util.UUID;
 public class JwtUtil {
 
     private static long EXPIRATION = 1000 * 60 * 60 * 24;
-    private static final String SECRET = "SHANGHAIUNIVERSITYCOLLEGEOFCOMPUTERENGINEERINGANDSCIENCE";
+    private static final String SECRET = "SHUCOLLEGEOFCOMPUTERENGINEERINGANDSCIENCE22123131";
 
     private static final Key SIGNING_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 

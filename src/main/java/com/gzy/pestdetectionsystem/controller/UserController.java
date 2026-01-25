@@ -3,6 +3,7 @@ package com.gzy.pestdetectionsystem.controller;
 import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
+import com.gzy.pestdetectionsystem.entity.User;
 import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.Result;
@@ -21,13 +22,13 @@ public class UserController {
     private final AuthService authService;
 
     @GetMapping("/all")
-    public List<UserVo> getAllUsers() {
-        return userService.getAllUsers();
+    public Result<List<UserVo>> getAllUsers() {
+        return Result.ok(userService.getAllUsers());
     }
 
     @PostMapping("/login")
-    public UserVo login(@RequestBody LoginDTO dto) {
-        return authService.login(dto);
+    public Result<UserVo> login(@RequestBody LoginDTO dto) {
+        return Result.ok(authService.login(dto));
     }
 
     @PostMapping("/register")
@@ -38,7 +39,6 @@ public class UserController {
 
     @PostMapping("/bind")
     public Result<?> bind(@RequestBody BindDTO dto){
-        System.out.println("received: " + dto.getEmail());
         authService.bind(dto);
         return Result.ok("绑定成功");
     }

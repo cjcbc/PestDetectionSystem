@@ -1,7 +1,8 @@
 package com.gzy.pestdetectionsystem.service.impl;
 
 import com.gzy.pestdetectionsystem.entity.User;
-import com.gzy.pestdetectionsystem.exception.AuthException;
+import com.gzy.pestdetectionsystem.exception.BusinessException;
+import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
@@ -38,27 +39,27 @@ public class UserServiceImpl implements UserService {
         return userVoList;
     }
 
-    @Override
-    public UserVo getProfile(String token) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            throw new AuthException(401, "未登录");
-        }
-
-        String jwt = token.substring(7);
-        Claims claims = jwtUtil.parseToken(jwt);
-        Long userId = Long.parseLong(claims.getSubject());
-
-        User user = userMapper.selectById(userId);
-        if (user == null) {
-            throw new AuthException(404, "用户不存在");
-        }
-
-        UserVo vo = new UserVo();
-        vo.setId(user.getId());
-        vo.setUsername(user.getUsername());
-        vo.setPhone(user.getPhone());
-        vo.setEmail(user.getEmail());
-        return vo;
-    }
-
+//    @Override
+//    public UserVo getProfile(String token) {
+//        if (token == null || !token.startsWith("Bearer ")) {
+//            throw new BusinessException(CommonErrorCode.UNAUTHORIZED);
+//        }
+//
+//        String jwt = token.substring(7);
+//        Claims claims = jwtUtil.parseToken(jwt);
+//        Long userId = Long.parseLong(claims.getSubject());
+//
+//        User user = userMapper.selectById(userId);
+//        if (user == null) {
+//            throw new BusinessException(40011, "用户不存在");
+//        }
+//
+//        UserVo vo = new UserVo();
+//        vo.setId(user.getId());
+//        vo.setUsername(user.getUsername());
+//        vo.setPhone(user.getPhone());
+//        vo.setEmail(user.getEmail());
+//        return vo;
+//    }
+//
 }

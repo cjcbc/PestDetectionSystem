@@ -29,9 +29,5 @@ public class BindDTO {
                 return null;
             }
         }
-
-        public String toValue() {
-            return this.name();
-        }
     }
 }
