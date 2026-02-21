@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: PestDetectionSystem
+  datasource:
+    url: jdbc:mysql://localhost:3306/pest_detection_system?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml
+  type-aliases-package: com.gzy.pestdetectionsystem.entity
+  global-config:
+    db-config:
+      id-type: input
+server:
+  port: 8888
+  servlet:
+    context-path: /api
