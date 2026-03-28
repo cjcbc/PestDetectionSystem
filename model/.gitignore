@@ -1,0 +1,8 @@
+/Plant_leave_diseases_dataset_with_augmentation
+/OpenDataLab___IP102
+/Dataset
+/Dataset_Raw
+*.pt
+/runs
+/inference_results
+*.7z

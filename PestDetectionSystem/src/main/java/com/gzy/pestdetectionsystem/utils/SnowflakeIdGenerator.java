@@ -31,8 +31,8 @@ public class SnowflakeIdGenerator {
 
     //左移位数
     private static final long MACHINE_SHIFT = SEQUENCE_BITS;
-    private static final long DATACENTER_SHIFT = SEQUENCE_BITS + MACHINE_ID_BITS;
-    private static final long TIMESTAMP_SHIFT = SEQUENCE_BITS + MACHINE_ID_BITS + DATACENTER_ID_BITS;
+    private static final long DATACENTER_SHIFT = MACHINE_SHIFT + MACHINE_ID_BITS;
+    private static final long TIMESTAMP_SHIFT = DATACENTER_SHIFT + DATACENTER_ID_BITS;
 
     //每毫秒4096个ID
     private long sequence = 0L;

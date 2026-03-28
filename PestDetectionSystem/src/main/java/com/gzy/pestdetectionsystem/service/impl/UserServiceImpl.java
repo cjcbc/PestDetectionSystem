@@ -43,8 +43,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVo getUserById(Long id) {
         User user = userMapper.selectById(id);
+        if (user == null) {
+            throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
+        }
+        
         UserVo userVo = new UserVo();
-
         userVo.setId(user.getId());
         userVo.setUsername(user.getUsername());
         userVo.setEmail(user.getEmail());

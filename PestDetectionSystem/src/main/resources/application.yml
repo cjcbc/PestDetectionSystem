@@ -17,3 +17,7 @@ server:
   port: 8888
   servlet:
     context-path: /api
+
+jwt:
+  secret: SHUCOLLEGEOFCOMPUTERENGINEERINGANDSCIENCE22123131
+  expiration: 7200000  # 2小时（毫秒）

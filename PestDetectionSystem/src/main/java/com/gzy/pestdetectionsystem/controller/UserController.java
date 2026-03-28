@@ -44,10 +44,11 @@ public class UserController {
         return Result.ok(userService.getProfile(request));
     }
 
-    @PatchMapping("/{id}/username")
-    public Result<UserVo> updateUsername(@PathVariable Long id, @RequestParam String username){
-        userService.updateUsername(id, username);
-        return Result.ok(userService.getUserById(id));
+    @PatchMapping("/username")
+    public Result<UserVo> updateUsername(@RequestParam String username, HttpServletRequest request){
+        Long currentUserId = (Long) request.getAttribute("userId");
+        userService.updateUsername(currentUserId, username);
+        return Result.ok(userService.getUserById(currentUserId));
     }
 
 }

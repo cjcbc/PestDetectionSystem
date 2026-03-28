@@ -1,8 +1,9 @@
 package com.gzy.pestdetectionsystem.utils;
 
-import com.gzy.pestdetectionsystem.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -13,10 +14,20 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
 
-    private static final long EXPIRATION = 1000 * 60 * 60 * 24;
-    private static final String SECRET = "SHUCOLLEGEOFCOMPUTERENGINEERINGANDSCIENCE22123131";
+    @Value("${jwt.expiration}")
+    private long expiration;
 
-    private static final Key SIGNING_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    @Value("${jwt.secret}")
+    private String secret;
+
+    private static Key SIGNING_KEY;
+    private static long EXPIRATION;
+
+    @PostConstruct
+    public void init() {
+        SIGNING_KEY = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        EXPIRATION = this.expiration;
+    }
 
     public static String createToken(Long userId, int roleId) {
         long now = System.currentTimeMillis();
@@ -58,4 +69,3 @@ public class JwtUtil {
     }
 
 }
-
