@@ -32,6 +32,11 @@ public enum CommonErrorCode {
     BIND_EMAIL_SAME(40025,"新邮箱与原邮箱一致"),
     BIND_EMAIL_EXISTS(40026,"邮箱已被其他账号绑定"),
 
+    // LLM 4003x
+    LLM_PARAM_INVALID(40030, "LLM 请求参数不合法"),
+    LLM_API_KEY_MISSING(40031, "未配置 LLM API Key"),
+    LLM_CALL_FAILED(40032, "调用 LLM 服务失败"),
+    LLM_RESPONSE_EMPTY(40033, "LLM 返回为空"),
 
 
     UNKNOWN(999999, "未知错误");

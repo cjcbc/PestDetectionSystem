@@ -1,8 +1,8 @@
 package com.gzy.pestdetectionsystem.service.impl;
 
 import com.gzy.pestdetectionsystem.service.ModelService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -12,9 +12,12 @@ import java.util.Map;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class ModelServiceImpl implements ModelService {
-    private final WebClient webClient;
+    private final WebClient modelWebClient;
+
+    public ModelServiceImpl(@Qualifier("modelWebClient") WebClient modelWebClient) {
+        this.modelWebClient = modelWebClient;
+    }
 
     @Override
     public Map<String, Object> calculate(double a, double b, String operation) {
@@ -29,7 +32,7 @@ public class ModelServiceImpl implements ModelService {
             requestBody.put("b", b);
             requestBody.put("operation", operation);
 
-            Map responseBody = webClient.post()
+            Map responseBody = modelWebClient.post()
                     .uri("/calculate")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
@@ -58,4 +61,3 @@ public class ModelServiceImpl implements ModelService {
         return result;
     }
 }
-

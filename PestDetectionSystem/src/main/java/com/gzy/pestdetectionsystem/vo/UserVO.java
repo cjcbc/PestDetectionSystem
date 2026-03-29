@@ -1,6 +1,5 @@
 package com.gzy.pestdetectionsystem.vo;
 
-import com.gzy.pestdetectionsystem.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "返回用户信息")
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserVo {
+public class UserVO {
 
     //id 唯一标识符
     private Long id;

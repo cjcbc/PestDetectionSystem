@@ -21,3 +21,12 @@ server:
 jwt:
   secret: SHUCOLLEGEOFCOMPUTERENGINEERINGANDSCIENCE22123131
   expiration: 7200000  # 2小时（毫秒）
+
+llm:
+  base-url: https://api.minimaxi.com/v1
+  api-key:
+  chat-path: /chat/completions
+  model: MiniMax-M2.7
+  temperature: 1.0
+  max-tokens:  1024
+

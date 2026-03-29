@@ -3,7 +3,7 @@ package com.gzy.pestdetectionsystem.service;
 import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
-import com.gzy.pestdetectionsystem.vo.UserVo;
+import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
@@ -20,7 +20,7 @@ public interface AuthService {
      * @param dto 前端传来的登录信息（手机号/邮箱 + 密码）
      * @return 登录成功后返回用户信息和 token
      */
-    public UserVo login(LoginDTO dto);
+    public UserVO login(LoginDTO dto);
 
     /**
      * 用户绑定手机号或邮箱

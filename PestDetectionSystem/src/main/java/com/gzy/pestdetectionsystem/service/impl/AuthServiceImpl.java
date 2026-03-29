@@ -11,7 +11,7 @@ import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
-import com.gzy.pestdetectionsystem.vo.UserVo;
+import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -76,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("用户注册成功，userId={}, username = {}", id, username);
     }
 
-    public UserVo login(LoginDTO dto) {
+    public UserVO login(LoginDTO dto) {
         if (Objects.isNull(dto)) {
             throw new BusinessException(CommonErrorCode.LOGIN_PARAM_INVALID);
         }
@@ -95,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
         String token = JwtUtil.createToken(user.getId(), user.getRole().getId());
 
         log.info("用户登录成功，userId={}", user.getId());
-        return new UserVo(user.getId(), user.getRole().getId(), user.getUsername(), user.getEmail(), user.getPhone(), token);
+        return new UserVO(user.getId(), user.getRole().getId(), user.getUsername(), user.getEmail(), user.getPhone(), token);
     }
 
 

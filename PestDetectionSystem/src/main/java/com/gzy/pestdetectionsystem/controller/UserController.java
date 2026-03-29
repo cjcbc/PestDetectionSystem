@@ -3,17 +3,13 @@ package com.gzy.pestdetectionsystem.controller;
 import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
-import com.gzy.pestdetectionsystem.entity.User;
 import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.Result;
-import com.gzy.pestdetectionsystem.vo.UserVo;
+import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -23,7 +19,7 @@ public class UserController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public Result<UserVo> login(@RequestBody LoginDTO dto) {
+    public Result<UserVO> login(@RequestBody LoginDTO dto) {
         return Result.ok(authService.login(dto));
     }
 
@@ -40,12 +36,12 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public Result<UserVo> info(HttpServletRequest request){
+    public Result<UserVO> info(HttpServletRequest request){
         return Result.ok(userService.getProfile(request));
     }
 
     @PatchMapping("/username")
-    public Result<UserVo> updateUsername(@RequestParam String username, HttpServletRequest request){
+    public Result<UserVO> updateUsername(@RequestParam String username, HttpServletRequest request){
         Long currentUserId = (Long) request.getAttribute("userId");
         userService.updateUsername(currentUserId, username);
         return Result.ok(userService.getUserById(currentUserId));

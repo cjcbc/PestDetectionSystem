@@ -5,7 +5,7 @@ import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.service.UserService;
-import com.gzy.pestdetectionsystem.vo.UserVo;
+import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,32 +22,32 @@ public class UserServiceImpl implements UserService {
         this.userMapper = userMapper;
     }
 
-    public List<UserVo> getAllUsers() {
+    public List<UserVO> getAllUsers() {
         List<User> users = userMapper.selectList(null);
 
-        List<UserVo> userVoList = new ArrayList<>();
+        List<UserVO> userVOList = new ArrayList<>();
         for (User user : users) {
-            UserVo userVo = new UserVo();
+            UserVO userVo = new UserVO();
             userVo.setId(user.getId());
             userVo.setUsername(user.getUsername());
             userVo.setEmail(user.getEmail());
             userVo.setPhone(user.getPhone());
             userVo.setRole(user.getRole().getId());
-            userVoList.add(userVo);
+            userVOList.add(userVo);
         }
 
         log.warn("获取所有用户信息");
-        return userVoList;
+        return userVOList;
     }
 
     @Override
-    public UserVo getUserById(Long id) {
+    public UserVO getUserById(Long id) {
         User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
         }
         
-        UserVo userVo = new UserVo();
+        UserVO userVo = new UserVO();
         userVo.setId(user.getId());
         userVo.setUsername(user.getUsername());
         userVo.setEmail(user.getEmail());
@@ -93,11 +93,11 @@ public class UserServiceImpl implements UserService {
 //
 
     @Override
-    public UserVo getProfile(HttpServletRequest request) {
+    public UserVO getProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String token = (String) request.getAttribute("token");
         User user = userMapper.selectById(userId);
-        UserVo userVo = new UserVo();
+        UserVO userVo = new UserVO();
         userVo.setId(user.getId());
         userVo.setUsername(user.getUsername());
         userVo.setEmail(user.getEmail());

@@ -2,7 +2,7 @@ package com.gzy.pestdetectionsystem.controller;
 
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.Result;
-import com.gzy.pestdetectionsystem.vo.UserVo;
+import com.gzy.pestdetectionsystem.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +17,7 @@ public class AdminController {
     private final UserService userService;
 
     @GetMapping("/allusers")
-    public Result<List<UserVo>> getAllUsers() {
+    public Result<List<UserVO>> getAllUsers() {
         return Result.ok(userService.getAllUsers());
     }
 
