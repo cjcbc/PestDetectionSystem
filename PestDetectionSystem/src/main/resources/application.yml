@@ -30,3 +30,5 @@ llm:
   temperature: 1.0
   max-tokens:  1024
 
+user:
+  base-path: D:\SHU files\Graduation project\PestDetectionSystem\images

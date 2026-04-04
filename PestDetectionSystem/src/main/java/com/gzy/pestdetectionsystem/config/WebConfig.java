@@ -12,13 +12,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 管理员拦截器（角色0）
         registry.addInterceptor(new CommonInterceptor(Set.of(0)))
                 .addPathPatterns("/admin/**")
-                .excludePathPatterns("/admin/login").excludePathPatterns("/health/**");
+                .excludePathPatterns("/api/admin/login");
 
+        // 用户拦截器（角色1）
         registry.addInterceptor(new CommonInterceptor(Set.of(1)))
-                .addPathPatterns("/user/**")
-                .excludePathPatterns("/user/login")
-                .excludePathPatterns("/user/register");
+                .addPathPatterns("/user/**", "/detect/**", "/chat/**")
+                .excludePathPatterns("/api/user/login", "/api/user/register");
     }
 }

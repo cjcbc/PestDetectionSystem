@@ -11,20 +11,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserVO {
 
-    //id 唯一标识符
     private Long id;
-
-    // 角色
     private int role;
-
-    //用户名
     private String username;
-
-    //邮箱
     private String email;
-
-    //手机号
     private String phone;
+    private int sex;
+    private String image;
+    private int status;
+    private int flag;
 
     //JwtToken
     private String token;

@@ -15,4 +15,7 @@ public interface UserMapper extends BaseMapper<User> {
             "WHERE phone = #{account} OR email = #{account} " +
             "LIMIT 1")
     User selectByAccount(String account);
+
+    @Select("SELECT * FROM user WHERE id = #{id} FOR UPDATE")
+    User selectByIdForUpdate(Long id);
 }

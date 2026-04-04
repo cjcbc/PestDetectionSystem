@@ -38,6 +38,15 @@ public enum CommonErrorCode {
     LLM_CALL_FAILED(40032, "调用 LLM 服务失败"),
     LLM_RESPONSE_EMPTY(40033, "LLM 返回为空"),
 
+    // Chat 4004x
+    CHAT_SESSION_NOT_FOUND(40040, "对话会话不存在或已删除"),
+    CHAT_QUOTA_EXCEEDED(40041, "今日对话次数已达上限"),
+    CHAT_MESSAGE_EMPTY(40042, "消息内容不能为空"),
+
+    // User 4005x
+    USER_AVATAR_EMPTY(40050, "头像文件不能为空"),
+    USER_AVATAR_TYPE_INVALID(40051, "只能上传图片文件"),
+    USER_AVATAR_TOO_LARGE(40052, "图片大小不能超过5MB"),
 
     UNKNOWN(999999, "未知错误");
 

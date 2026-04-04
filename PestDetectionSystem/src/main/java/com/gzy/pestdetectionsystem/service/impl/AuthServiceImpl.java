@@ -8,6 +8,7 @@ import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.service.AuthService;
+import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
@@ -23,10 +24,12 @@ import java.util.Objects;
 public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
+    private final UserService userService;
 
-    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator) {
+    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService, UserService userService1) {
         this.userMapper = userMapper;
         this.snowflakeIdGenerator = snowflakeIdGenerator;
+        this.userService = userService1;
     }
 
     public void register(RegisterDTO dto) {
@@ -95,7 +98,12 @@ public class AuthServiceImpl implements AuthService {
         String token = JwtUtil.createToken(user.getId(), user.getRole().getId());
 
         log.info("用户登录成功，userId={}", user.getId());
-        return new UserVO(user.getId(), user.getRole().getId(), user.getUsername(), user.getEmail(), user.getPhone(), token);
+
+        new UserVO();
+        UserVO userVO = userService.getProfile(user.getId());
+        userVO.setToken(token);
+
+        return userVO;
     }
 
 

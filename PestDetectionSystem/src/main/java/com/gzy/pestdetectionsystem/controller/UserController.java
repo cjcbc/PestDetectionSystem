@@ -3,6 +3,7 @@ package com.gzy.pestdetectionsystem.controller;
 import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
+import com.gzy.pestdetectionsystem.entity.User;
 import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.Result;
@@ -10,6 +11,9 @@ import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -42,9 +46,23 @@ public class UserController {
 
     @PatchMapping("/username")
     public Result<UserVO> updateUsername(@RequestParam String username, HttpServletRequest request){
+        Long userId = (Long) request.getAttribute("userId");
+        userService.updateUsername(userId, username);
+        return Result.ok(userService.getProfile(userId));
+    }
+
+    @PatchMapping("sex")
+    public Result<UserVO> updateSex(@RequestParam int sex, HttpServletRequest request){
+        Long userId = (Long) request.getAttribute("userId");
+        userService.updateSex(userId,sex);
+        return Result.ok(userService.getProfile(userId));
+    }
+
+    @PostMapping("/avatar")
+    public Result<?> updateAvatar(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
         Long currentUserId = (Long) request.getAttribute("userId");
-        userService.updateUsername(currentUserId, username);
-        return Result.ok(userService.getUserById(currentUserId));
+        userService.updateImage(currentUserId, file);
+        return Result.ok("头像更新成功");
     }
 
 }

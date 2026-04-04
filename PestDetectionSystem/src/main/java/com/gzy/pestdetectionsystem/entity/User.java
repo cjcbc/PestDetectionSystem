@@ -38,6 +38,21 @@ public class User {
     // 创建时间
     private Long createdTime;
 
+    // 头像
+    private String image;
+
+    // 性别 0 男 1 女 2 未知
+    private Integer sex;
+
+    // 是否身份认证
+    private Boolean isIdentityAuthentication;
+
+    // 状态 0 正常 1 锁定
+    private Integer status;
+
+    // 标识 0 普通用户 1 自媒体人 2 大V
+    private Integer flag;
+
     public enum Role {
         ADMIN(0, "管理员"),
         USER(1, "普通用户");

@@ -3,6 +3,7 @@ package com.gzy.pestdetectionsystem.service;
 import com.gzy.pestdetectionsystem.dto.CreateChatSessionDTO;
 import com.gzy.pestdetectionsystem.dto.SendChatMessageDTO;
 import com.gzy.pestdetectionsystem.vo.ChatMessageVO;
+import com.gzy.pestdetectionsystem.vo.ChatQuotaVO;
 import com.gzy.pestdetectionsystem.vo.ChatReplyVO;
 import com.gzy.pestdetectionsystem.vo.ChatSessionVO;
 
@@ -34,4 +35,9 @@ public interface ChatService {
      *  删除对话
      */
     void deleteSession(Long userId, Long sessionId);
+
+    /**
+     * 获取用户配额
+     */
+    ChatQuotaVO getQuota(Long userId);
 }
