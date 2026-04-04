@@ -1,4 +1,8 @@
-# 给PlantVillage数据集的标签文件中的类别ID加上102偏移量
+"""
+PlantVillage标签偏移脚本
+为PlantVillage数据集的标签文件中的类别ID加上102的偏移量。
+用于将PlantVillage的38个类别(0-37)与IP102的102个类别(0-101)合并，形成140类统一数据集。
+"""
 
 import os
 

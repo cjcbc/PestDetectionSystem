@@ -1,4 +1,8 @@
-# 将VOC格式的XML标签转换为YOLO格式的TXT标签，并复制对应的图片
+"""
+VOC转YOLO格式转换脚本
+将IP102数据集的VOC格式XML标签转换为YOLO格式的TXT标签。
+同时复制对应的图片文件到输出目录，支持批量转换和错误处理。
+"""
 
 import xml.etree.ElementTree as ET
 import os
