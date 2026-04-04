@@ -6,3 +6,7 @@
 /runs
 /inference_results
 *.7z
+/validation_results
+__pycache__/
+*.py[cod]
+/results/
