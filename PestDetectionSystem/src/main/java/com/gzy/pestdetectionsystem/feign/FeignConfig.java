@@ -1,6 +1,5 @@
 package com.gzy.pestdetectionsystem.feign;
 
-import lombok.NoArgsConstructor;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 

@@ -1,11 +1,11 @@
 package com.gzy.pestdetectionsystem.entity;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -53,6 +53,7 @@ public class User {
     // 标识 0 普通用户 1 自媒体人 2 大V
     private Integer flag;
 
+    @Getter
     public enum Role {
         ADMIN(0, "管理员"),
         USER(1, "普通用户");
@@ -66,15 +67,6 @@ public class User {
             this.description = description;
         }
 
-        public int getId() { return id; }
-        public String getDescription() { return description; }
-
-        public static Role fromId(int id) {
-            for(Role r : values()) {
-                if(r.id == id) return r;
-            }
-            throw new IllegalArgumentException("未知角色ID: " + id);
-        }
     }
 
 }

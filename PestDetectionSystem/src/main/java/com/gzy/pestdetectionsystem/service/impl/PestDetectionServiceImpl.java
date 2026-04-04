@@ -12,7 +12,6 @@ import com.gzy.pestdetectionsystem.vo.PestDetectionVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -156,7 +155,7 @@ public class PestDetectionServiceImpl implements PestDetectionService {
             String fullBase64 = "data:image/jpeg;base64," + imageBase64;
             Map<String, Object> requestBody = Map.of("image_base64", fullBase64);
             
-            Map<String, Object> response = modelWebClient.post()
+             Map<String, Object> response = modelWebClient.post()
                     .uri("/predict")
                     .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)

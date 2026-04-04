@@ -3,7 +3,6 @@ package com.gzy.pestdetectionsystem.controller;
 import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
-import com.gzy.pestdetectionsystem.entity.User;
 import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.Result;
@@ -12,8 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
