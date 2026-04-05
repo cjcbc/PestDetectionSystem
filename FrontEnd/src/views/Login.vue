@@ -15,10 +15,10 @@
             size="large"
             class="login-form"
           >
-            <el-form-item prop="username">
+            <el-form-item prop="account">
               <el-input
-                v-model="loginForm.username"
-                placeholder="请输入用户名"
+                v-model="loginForm.account"
+                placeholder="请输入邮箱或手机号"
                 :prefix-icon="User"
                 clearable
               />
@@ -66,6 +66,21 @@
                 clearable
               />
             </el-form-item>
+            <el-form-item prop="email">
+              <el-input
+                v-model="registerForm.email"
+                placeholder="请输入邮箱（可选）"
+                type="email"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item prop="phone">
+              <el-input
+                v-model="registerForm.phone"
+                placeholder="请输入手机号（可选）"
+                clearable
+              />
+            </el-form-item>
             <el-form-item prop="password">
               <el-input
                 v-model="registerForm.password"
@@ -104,37 +119,62 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import { useAppStore } from '@/stores/app'
+import { login, register } from '@/api/user'
 
 const router = useRouter()
+const route = useRoute()
+const appStore = useAppStore()
 const activeTab = ref('login')
 const loading = ref(false)
 
 // 登录表单
 const loginFormRef = ref<FormInstance>()
 const loginForm = reactive({
-  username: '',
+  account: '',
   password: '',
   remember: false
 })
 
 const loginRules = reactive<FormRules>({
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  account: [
+    { required: true, message: '请输入邮箱或手机号', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ]
 })
 
 // 注册表单
 const registerFormRef = ref<FormInstance>()
 const registerForm = reactive({
   username: '',
+  email: '',
+  phone: '',
   password: '',
   confirmPassword: ''
 })
 
-const validateConfirmPassword = (rule: any, value: string, callback: any) => {
+const validatePassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+  if (!value) {
+    callback(new Error('请输入密码'))
+  } else if (value.length < 6) {
+    callback(new Error('密码长度不能少于6位'))
+  } else {
+    callback()
+  }
+}
+
+const validateConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
   if (value === '') {
     callback(new Error('请再次确认密码'))
   } else if (value !== registerForm.password) {
@@ -149,9 +189,15 @@ const registerRules = reactive<FormRules>({
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
+  email: [
+    { required: false, trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  phone: [
+    { required: false, trigger: 'blur' }
+  ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+    { validator: validatePassword, trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, validator: validateConfirmPassword, trigger: 'blur' }
@@ -160,33 +206,58 @@ const registerRules = reactive<FormRules>({
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
-  await loginFormRef.value.validate((valid) => {
-    if (valid) {
-      loading.value = true
-      // 模拟登录请求
-      setTimeout(() => {
-        loading.value = false
-        localStorage.setItem('token', 'dummy-token') // 模拟保存 token
-        ElMessage.success('登录成功')
+  await loginFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    loading.value = true
+    try {
+      const response = await login({
+        account: loginForm.account,
+        password: loginForm.password
+      })
+      
+      // 保存用户信息和token到store
+      appStore.setUser(response, response.token)
+      
+      ElMessage.success('登录成功')
+      
+      // 重定向到之前的页面或首页
+      const redirect = route.query.redirect as string
+      if (redirect && redirect.startsWith('/')) {
+        router.push(redirect)
+      } else {
         router.push('/')
-      }, 1000)
+      }
+    } catch (error) {
+      console.error('登录失败:', error)
+    } finally {
+      loading.value = false
     }
   })
 }
 
 const handleRegister = async () => {
   if (!registerFormRef.value) return
-  await registerFormRef.value.validate((valid) => {
-    if (valid) {
-      loading.value = true
-      // 模拟注册请求
-      setTimeout(() => {
-        loading.value = false
-        ElMessage.success('注册成功，请登录')
-        activeTab.value = 'login'
-        loginForm.username = registerForm.username
-        registerFormRef.value?.resetFields()
-      }, 1000)
+  await registerFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    loading.value = true
+    try {
+      await register({
+        username: registerForm.username,
+        password: registerForm.password,
+        email: registerForm.email,
+        phone: registerForm.phone
+      })
+      
+      ElMessage.success('注册成功，请登录')
+      activeTab.value = 'login'
+      loginForm.account = registerForm.email || registerForm.phone || ''
+      registerFormRef.value?.resetFields()
+    } catch (error) {
+      console.error('注册失败:', error)
+    } finally {
+      loading.value = false
     }
   })
 }
