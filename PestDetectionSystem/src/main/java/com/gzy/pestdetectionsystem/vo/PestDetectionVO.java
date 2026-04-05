@@ -23,5 +23,12 @@ public class PestDetectionVO {
 
     private BigDecimal confidence;
 
+    /**
+     * -1: 未检测到
+     * 0: 低置信度
+     * 1: 高置信度
+     */
+    private Integer status;
+
     private Long createdTime;
 }

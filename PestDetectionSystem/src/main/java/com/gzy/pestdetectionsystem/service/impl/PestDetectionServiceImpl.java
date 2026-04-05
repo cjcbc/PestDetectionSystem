@@ -12,6 +12,7 @@ import com.gzy.pestdetectionsystem.vo.PestDetectionVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,7 +22,10 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -29,11 +33,18 @@ import java.util.*;
 public class PestDetectionServiceImpl implements PestDetectionService {
 
     private static final double CONFIDENCE_THRESHOLD = 0.7;
+    private static final int STATUS_NOT_DETECTED = -1;
+    private static final int STATUS_LOW_CONFIDENCE = 0;
+    private static final int STATUS_HIGH_CONFIDENCE = 1;
+    private static final String NOT_DETECTED_LABEL = "未检测到病虫害";
     private static final String PEST_IMAGE_DIR = "D:\\SHU files\\Graduation project\\PestDetectionSystem\\pest-images";
+    private static final String ANNOTATED_SUFFIX = "_annotated";
 
     private final PestDetectionMapper pestDetectionMapper;
+
     @Qualifier("modelWebClient")
     private final WebClient modelWebClient;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -43,131 +54,152 @@ public class PestDetectionServiceImpl implements PestDetectionService {
             throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "图片不能为空");
         }
 
-        // 1. 保存图片到本地
-        String imagePath = saveImageToLocal(userId, dto.getImageBase64());
+        String originalImagePath = saveImageToLocal(userId, dto.getImageBase64());
+        String originalImageName = extractFileName(originalImagePath);
+        Map<String, Object> flaskResult = callFlaskPredict(dto.getImageBase64(), originalImageName);
 
-        // 2. 调用 Flask 检测接口
-        Map<String, Object> flaskResult = callFlaskPredict(dto.getImageBase64());
-        
         if (flaskResult == null || !Boolean.TRUE.equals(flaskResult.get("success"))) {
-            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "Flask检测服务调用失败");
+            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "Flask 检测服务调用失败");
         }
 
-        // 3. 解析结果
+        String annotatedPath = (String) flaskResult.get("annotated_path");
+        if (annotatedPath == null || annotatedPath.isBlank()) {
+            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "Flask 未返回标注图片路径");
+        }
+
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> predictions = (List<Map<String, Object>>) flaskResult.get("predictions");
+
+        int status;
+        String className;
+        double confidence;
         if (predictions == null || predictions.isEmpty()) {
-            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "未检测到病虫害");
+            status = STATUS_NOT_DETECTED;
+            className = NOT_DETECTED_LABEL;
+            confidence = 0D;
+        } else {
+            Map<String, Object> prediction = predictions.get(0);
+            confidence = ((Number) prediction.get("confidence")).doubleValue();
+            className = (String) prediction.get("class_name");
+            status = confidence >= CONFIDENCE_THRESHOLD ? STATUS_HIGH_CONFIDENCE : STATUS_LOW_CONFIDENCE;
         }
 
-        // 取第一个预测结果
-        Map<String, Object> prediction = predictions.get(0);
-        double confidence = ((Number) prediction.get("confidence")).doubleValue();
-        String className = (String) prediction.get("class_name");
-        String imageName = (String) flaskResult.getOrDefault("image_name", "unknown");
-
-        // 4. 保存记录
         PestDetection detection = new PestDetection();
         detection.setId(System.currentTimeMillis());
         detection.setUserId(userId);
-        detection.setImageUrl(imagePath);
-        detection.setOriginalFileName(imageName);
+        detection.setImageUrl(annotatedPath);
+        detection.setOriginalFileName(originalImageName);
         detection.setResultJson(toJsonString(flaskResult));
         detection.setTopLabel(className);
         detection.setConfidence(BigDecimal.valueOf(confidence));
-        detection.setStatus(confidence >= CONFIDENCE_THRESHOLD ? 1 : 0);
+        detection.setStatus(status);
         long now = System.currentTimeMillis();
         detection.setCreatedTime(now);
         detection.setUpdatedTime(now);
         pestDetectionMapper.insert(detection);
 
-        log.info("用户{} 检测结果: class={}, confidence={}, valid={}", 
-                userId, className, confidence, confidence >= CONFIDENCE_THRESHOLD);
+        log.info("用户 {} 检测完成: class={}, confidence={}, status={}, annotatedPath={}",
+                userId, className, confidence, status, annotatedPath);
 
-        // 5. 置信度 < 0.7 暂正常返回，后续修改
-        if (confidence < CONFIDENCE_THRESHOLD) {
-
-        }
-
-        // 6. 返回结果
-        PestDetectionVO vo = new PestDetectionVO();
-        vo.setId(detection.getId());
-        vo.setUserId(userId);
-        vo.setImageName(imageName);
-        vo.setTopLabel(className);
-        vo.setConfidence(BigDecimal.valueOf(confidence));
-        vo.setCreatedTime(detection.getCreatedTime());
-        return vo;
+        return toVO(detection);
     }
 
     @Override
     public List<PestDetectionVO> getRecords(Long userId) {
         LambdaQueryWrapper<PestDetection> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PestDetection::getUserId, userId)
-               .eq(PestDetection::getStatus, 1)
-               .orderByDesc(PestDetection::getCreatedTime);
-        
+                .orderByDesc(PestDetection::getCreatedTime);
+
         List<PestDetection> records = pestDetectionMapper.selectList(wrapper);
-        
         List<PestDetectionVO> voList = new ArrayList<>();
+
         for (PestDetection record : records) {
-            PestDetectionVO vo = new PestDetectionVO();
-            vo.setId(record.getId());
-            vo.setUserId(record.getUserId());
-            vo.setImageName(record.getOriginalFileName());
-            vo.setTopLabel(record.getTopLabel());
-            vo.setConfidence(record.getConfidence());
-            vo.setCreatedTime(record.getCreatedTime());
-            voList.add(vo);
+            voList.add(toVO(record));
         }
+
         return voList;
     }
 
-    /**
-     * 保存图片到本地目录
-     */
+    private PestDetectionVO toVO(PestDetection detection) {
+        PestDetectionVO vo = new PestDetectionVO();
+        vo.setId(detection.getId());
+        vo.setUserId(detection.getUserId());
+        vo.setImageName(extractFileName(detection.getImageUrl()));
+        vo.setTopLabel(detection.getTopLabel());
+        vo.setConfidence(detection.getConfidence());
+        vo.setStatus(detection.getStatus());
+        vo.setCreatedTime(detection.getCreatedTime());
+        return vo;
+    }
+
     private String saveImageToLocal(Long userId, String imageBase64) {
         try {
-            // 创建目录
             Path dirPath = Paths.get(PEST_IMAGE_DIR);
             Files.createDirectories(dirPath);
 
-            // 生成文件名
             String fileName = userId + "_" + System.currentTimeMillis() + ".jpg";
             Path filePath = dirPath.resolve(fileName);
 
-            // 解码并保存
             byte[] imageBytes = Base64.getDecoder().decode(imageBase64);
             Files.write(filePath, imageBytes);
 
-            log.info("图片已保存: {}", filePath);
+            log.info("原图已保存: {}", filePath);
             return filePath.toString();
         } catch (IOException e) {
-            log.error("保存图片失败: {}", e.getMessage(), e);
-            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "保存图片失败");
+            log.error("保存原图失败: {}", e.getMessage(), e);
+            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "保存原图失败");
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> callFlaskPredict(String imageBase64) {
+    private Map<String, Object> callFlaskPredict(String imageBase64, String imageName) {
         try {
-            // Flask 接收带前缀的 base64: data:image/jpeg;base64,/9j/4AAQ...
             String fullBase64 = "data:image/jpeg;base64," + imageBase64;
-            Map<String, Object> requestBody = Map.of("image_base64", fullBase64);
-            
-             Map<String, Object> response = modelWebClient.post()
+            Map<String, Object> requestBody = Map.of(
+                    "image_base64", fullBase64,
+                    "image_name", imageName
+            );
+
+            return modelWebClient.post()
                     .uri("/predict")
-                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-            
-            return response;
         } catch (Exception e) {
-            log.error("调用Flask服务失败: {}", e.getMessage(), e);
+            log.error("调用 Flask 服务失败: {}", e.getMessage(), e);
             return null;
         }
+    }
+
+    private String extractFileName(String path) {
+        if (path == null || path.isBlank()) {
+            return path;
+        }
+        return Paths.get(path).getFileName().toString();
+    }
+
+    private String getOriginalImagePathFromAnnotated(String annotatedPath) {
+        if (annotatedPath == null || annotatedPath.isBlank()) {
+            return annotatedPath;
+        }
+
+        Path path = Paths.get(annotatedPath);
+        String fileName = path.getFileName().toString();
+        int dotIndex = fileName.lastIndexOf('.');
+        String nameWithoutExt = dotIndex >= 0 ? fileName.substring(0, dotIndex) : fileName;
+        String extension = dotIndex >= 0 ? fileName.substring(dotIndex) : "";
+
+        if (nameWithoutExt.endsWith(ANNOTATED_SUFFIX)) {
+            nameWithoutExt = nameWithoutExt.substring(0, nameWithoutExt.length() - ANNOTATED_SUFFIX.length());
+        }
+
+        Path parent = path.getParent();
+        Path originalPath = parent == null
+                ? Paths.get(nameWithoutExt + extension)
+                : parent.resolve(nameWithoutExt + extension);
+        return originalPath.toString();
     }
 
     private String toJsonString(Object obj) {

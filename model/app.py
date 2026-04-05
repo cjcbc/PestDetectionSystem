@@ -13,6 +13,7 @@ from flask import Flask, request, jsonify
 from predict_test import predict_image
 
 app = Flask(__name__)
+ANNOTATED_OUTPUT_DIR = Path(r"D:\SHU files\Graduation project\PestDetectionSystem\pest-images")
 
 
 def _get_image_from_request():
@@ -55,7 +56,12 @@ def predict():
             'predictions': [],
         }), 400
 
-    json_result, _, _ = predict_image(img, image_name=image_name, show=False, save=False)
+    json_result, result, _ = predict_image(img, image_name=image_name, show=False, save=False)
+    annotated_img = result.plot()
+    ANNOTATED_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    annotated_path = ANNOTATED_OUTPUT_DIR / f"{Path(image_name).stem}_annotated.jpg"
+    cv2.imwrite(str(annotated_path), annotated_img)
+    json_result["annotated_path"] = str(annotated_path)
     return jsonify(json_result)
 
 
