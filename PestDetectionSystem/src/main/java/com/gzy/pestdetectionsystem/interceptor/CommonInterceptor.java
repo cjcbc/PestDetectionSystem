@@ -1,5 +1,7 @@
 package com.gzy.pestdetectionsystem.interceptor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gzy.pestdetectionsystem.utils.Result;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +13,7 @@ import java.util.Set;
 
 @Component
 public class CommonInterceptor implements HandlerInterceptor {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final Set<Integer> allowedRoles;
 
     public CommonInterceptor(Set<Integer> allowedRoles) {
@@ -24,8 +27,7 @@ public class CommonInterceptor implements HandlerInterceptor {
 
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Bearer token is required");
+            writeResult(response, HttpServletResponse.SC_UNAUTHORIZED, "Bearer token is required");
             return false;
         }
 
@@ -38,12 +40,10 @@ public class CommonInterceptor implements HandlerInterceptor {
             userId = JwtUtil.getUserIdFromToken(token);
             roleId = JwtUtil.getRoleIdFromToken(token);
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token out of date");
+            writeResult(response, HttpServletResponse.SC_UNAUTHORIZED, "Token out of date");
             return false;
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid Token");
+            writeResult(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
             return false;
         }
 
@@ -54,9 +54,15 @@ public class CommonInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.getWriter().write("Access denied");
+        writeResult(response, HttpServletResponse.SC_FORBIDDEN, "Access denied");
         return false;
+    }
+
+    private void writeResult(HttpServletResponse response, int status, String message) throws Exception {
+        response.setStatus(status);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(OBJECT_MAPPER.writeValueAsString(Result.fail(status, message)));
     }
 }
 

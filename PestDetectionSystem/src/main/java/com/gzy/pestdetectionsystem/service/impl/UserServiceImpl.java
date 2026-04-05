@@ -6,6 +6,7 @@ import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.service.UserService;
+import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +25,17 @@ import java.util.Base64;
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
+    private static final long USER_PROFILE_CACHE_TTL_SECONDS = 30 * 60;
+    private static final String USER_PROFILE_CACHE_KEY_PREFIX = "user:profile:";
+
     private final UserMapper userMapper;
     private final UserProperties userProperties;
+    private final RedisUtil redisUtil;
 
-    public UserServiceImpl(UserMapper userMapper, UserProperties userProperties) {
+    public UserServiceImpl(UserMapper userMapper, UserProperties userProperties, RedisUtil redisUtil) {
         this.userMapper = userMapper;
         this.userProperties = userProperties;
+        this.redisUtil = redisUtil;
     }
 
     public List<UserVO> getAllUsers() {
@@ -81,6 +87,7 @@ public class UserServiceImpl implements UserService {
             return;
         user.setUsername(username);
         userMapper.updateById(user);
+        evictUserProfileCache(id);
     }
 
     @Override
@@ -93,6 +100,7 @@ public class UserServiceImpl implements UserService {
             return;
         user.setSex(sex);
         userMapper.updateById(user);
+        evictUserProfileCache(id);
     }
 
 
@@ -121,7 +129,11 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserVO getUserInfo(Long userId) {
+        log.info("user profile querying database, userId={}", userId);
         User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
+        }
         UserVO userVo = new UserVO();
         userVo.setId(user.getId());
         userVo.setUsername(user.getUsername());
@@ -135,18 +147,49 @@ public class UserServiceImpl implements UserService {
         return userVo;
     }
 
+    private String buildUserProfileCacheKey(Long userId) {
+        return USER_PROFILE_CACHE_KEY_PREFIX + userId;
+    }
+
+    private void cacheUserProfile(UserVO userVo) {
+        if (userVo == null || userVo.getId() == null) {
+            return;
+        }
+        boolean cached = redisUtil.set(buildUserProfileCacheKey(userVo.getId()), userVo, USER_PROFILE_CACHE_TTL_SECONDS);
+        if (cached) {
+            log.info("user profile cache updated, userId={}, ttlSeconds={}", userVo.getId(), USER_PROFILE_CACHE_TTL_SECONDS);
+        }
+    }
+
+    private void evictUserProfileCache(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        redisUtil.del(buildUserProfileCacheKey(userId));
+        log.info("user profile cache evicted, userId={}", userId);
+    }
+
     @Override
     public UserVO getProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String token = (String) request.getAttribute("token");
-        UserVO userVo;
-        userVo = getUserInfo(userId);
+        UserVO userVo = getProfile(userId);
         userVo.setToken(token);
         return userVo;
     }
 
     public UserVO getProfile(Long userId) {
-        return getUserInfo(userId);
+        String cacheKey = buildUserProfileCacheKey(userId);
+        UserVO cachedUser = redisUtil.get(cacheKey, UserVO.class);
+        if (cachedUser != null) {
+            log.info("user profile cache hit, userId={}", userId);
+            return cachedUser;
+        }
+
+        log.info("user profile cache missed, userId={}", userId);
+        UserVO userVo = getUserInfo(userId);
+        cacheUserProfile(userVo);
+        return userVo;
     }
 
     @Override
@@ -201,6 +244,7 @@ public class UserServiceImpl implements UserService {
         // 更新数据库
         user.setImage(filePath);
         userMapper.updateById(user);
+        evictUserProfileCache(userId);
         log.info("用户 {} 头像更新为: {}", userId, filePath);
     }
 }

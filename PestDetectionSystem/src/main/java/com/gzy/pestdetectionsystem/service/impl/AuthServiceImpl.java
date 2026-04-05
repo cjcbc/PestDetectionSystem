@@ -11,6 +11,7 @@ import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.service.UserService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
+import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
 import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,14 +23,18 @@ import java.util.Objects;
 @Service
 @Slf4j
 public class AuthServiceImpl implements AuthService {
+    private static final String USER_PROFILE_CACHE_KEY_PREFIX = "user:profile:";
+
     private final UserMapper userMapper;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final UserService userService;
+    private final RedisUtil redisUtil;
 
-    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService, UserService userService1) {
+    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService, RedisUtil redisUtil) {
         this.userMapper = userMapper;
         this.snowflakeIdGenerator = snowflakeIdGenerator;
-        this.userService = userService1;
+        this.userService = userService;
+        this.redisUtil = redisUtil;
     }
 
     public void register(RegisterDTO dto) {
@@ -155,6 +160,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPhone(dto.getPhone());
         userMapper.updateById(user);
+        evictUserProfileCache(user.getId());
         log.info("手机号绑定成功，userId={}, phone={}", user.getId(), dto.getPhone());
     }
 
@@ -178,6 +184,13 @@ public class AuthServiceImpl implements AuthService {
 
         user.setEmail(dto.getEmail());
         userMapper.updateById(user);
+        evictUserProfileCache(user.getId());
         log.info("邮箱绑定成功，userId={}, email={}", user.getId(), dto.getEmail());
+    }
+    private void evictUserProfileCache(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        redisUtil.del(USER_PROFILE_CACHE_KEY_PREFIX + userId);
     }
 }
