@@ -184,7 +184,8 @@ function handleAskAI() {
     path: '/chat',
     query: {
       detectionId: record.value.id.toString(),
-      detectionLabel: record.value.topLabel
+      detectionLabel: record.value.topLabel,
+      question: `请结合这次识别结果，分析${record.value.topLabel}的症状特征、可能成因和防治建议。`
     }
   })
 }
