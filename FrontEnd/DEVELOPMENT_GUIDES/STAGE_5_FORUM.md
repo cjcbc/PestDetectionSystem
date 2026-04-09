@@ -17,8 +17,8 @@
 // ===== 帖子相关 =====
 
 export interface ForumPost {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   author: string;
   title: string;
   category: string;           // 资讯、预警、技巧等
@@ -40,24 +40,24 @@ export interface CreatePostPayload {
 
 export function getPosts(page: number = 1, category?: string, search?: string): Promise<{ data: ForumPost[]; total: number }>
 
-export function getPostDetail(postId: number): Promise<ForumPost>
+export function getPostDetail(postId: string): Promise<ForumPost>
 
 export function createPost(payload: CreatePostPayload): Promise<ForumPost>
 
-export function updatePost(postId: number, payload: Partial<CreatePostPayload>): Promise<ForumPost>
+export function updatePost(postId: string, payload: Partial<CreatePostPayload>): Promise<ForumPost>
 
-export function deletePost(postId: number): Promise<{ code: 200; message: string }>
+export function deletePost(postId: string): Promise<{ code: 200; message: string }>
 
-export function likePost(postId: number): Promise<{ liked: boolean }>
+export function likePost(postId: string): Promise<{ liked: boolean }>
 
 // ===== 评论相关 =====
 
 export interface ForumComment {
-  id: number;
-  postId: number;
-  userId: number;
+  id: string;
+  postId: string;
+  userId: string;
   author: string;
-  parentId: number | null;    // 父评论 ID，用于回复
+  parentId: string | null;    // 父评论 ID，用于回复
   content: string;
   likeCount: number;
   isLiked: boolean;
@@ -65,18 +65,18 @@ export interface ForumComment {
   updatedTime: number;
 }
 
-export function getComments(postId: number): Promise<ForumComment[]>
+export function getComments(postId: string): Promise<ForumComment[]>
 
-export function createComment(postId: number, payload: { content: string; parentId?: number }): Promise<ForumComment>
+export function createComment(postId: string, payload: { content: string; parentId?: string }): Promise<ForumComment>
 
-export function deleteComment(commentId: number): Promise<{ code: 200; message: string }>
+export function deleteComment(commentId: string): Promise<{ code: 200; message: string }>
 
-export function likeComment(commentId: number): Promise<{ liked: boolean }>
+export function likeComment(commentId: string): Promise<{ liked: boolean }>
 
 // ===== 预警相关 =====
 
 export interface AlertInfo {
-  id: number;
+  id: string;
   title: string;
   content: string;
   severity: 'low' | 'medium' | 'high';  // 低、中、高
@@ -233,7 +233,7 @@ export const useForumStore = defineStore('forum', () => {
     }
   }
 
-  async function fetchPostDetail(postId: number) {
+  async function fetchPostDetail(postId: string) {
     try {
       currentPost.value = await getPostDetail(postId)
       comments.value = await getComments(postId)
@@ -253,7 +253,7 @@ export const useForumStore = defineStore('forum', () => {
     }
   }
 
-  async function toggleLikePost(postId: number) {
+  async function toggleLikePost(postId: string) {
     try {
       await likePost(postId)
       if (currentPost.value?.id === postId) {

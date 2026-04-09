@@ -17,7 +17,7 @@
 // ===== 用户管理相关 =====
 
 export interface AdminUser {
-  id: number;
+  id: string;
   username: string;
   email: string;
   phone: string;
@@ -28,18 +28,18 @@ export interface AdminUser {
 
 export function getAllUsers(): Promise<AdminUser[]>
 
-export function disableUser(userId: number): Promise<{ code: 200; message: string }>
+export function disableUser(userId: string): Promise<{ code: 200; message: string }>
 
-export function enableUser(userId: number): Promise<{ code: 200; message: string }>
+export function enableUser(userId: string): Promise<{ code: 200; message: string }>
 
-export function deleteUser(userId: number): Promise<{ code: 200; message: string }>
+export function deleteUser(userId: string): Promise<{ code: 200; message: string }>
 
-export function setUserRole(userId: number, role: 0 | 1): Promise<{ code: 200; message: string }>
+export function setUserRole(userId: string, role: 0 | 1): Promise<{ code: 200; message: string }>
 
 // ===== 内容审核相关 =====
 
 export interface PendingContent {
-  id: number;
+  id: string;
   type: 'post' | 'comment';
   author: string;
   title?: string;          // 仅帖子有
@@ -50,14 +50,14 @@ export interface PendingContent {
 
 export function getPendingContents(type?: 'post' | 'comment'): Promise<PendingContent[]>
 
-export function approveContent(contentId: number, type: 'post' | 'comment'): Promise<{ code: 200; message: string }>
+export function approveContent(contentId: string, type: 'post' | 'comment'): Promise<{ code: 200; message: string }>
 
-export function rejectContent(contentId: number, type: 'post' | 'comment', reason?: string): Promise<{ code: 200; message: string }>
+export function rejectContent(contentId: string, type: 'post' | 'comment', reason?: string): Promise<{ code: 200; message: string }>
 
 // ===== 预警管理相关 =====
 
 export interface AlertInfo {
-  id: number;
+  id: string;
   title: string;
   content: string;
   severity: 'low' | 'medium' | 'high';
@@ -78,11 +78,11 @@ export function getAlerts(): Promise<AlertInfo[]>
 
 export function createAlert(payload: CreateAlertPayload): Promise<AlertInfo>
 
-export function updateAlert(alertId: number, payload: Partial<CreateAlertPayload>): Promise<AlertInfo>
+export function updateAlert(alertId: string, payload: Partial<CreateAlertPayload>): Promise<AlertInfo>
 
-export function deleteAlert(alertId: number): Promise<{ code: 200; message: string }>
+export function deleteAlert(alertId: string): Promise<{ code: 200; message: string }>
 
-export function toggleAlertStatus(alertId: number): Promise<{ code: 200; message: string }>
+export function toggleAlertStatus(alertId: string): Promise<{ code: 200; message: string }>
 
 // ===== 系统统计相关 =====
 
@@ -344,7 +344,7 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function toggleUserStatus(userId: number, currentStatus: 0 | 1) {
+  async function toggleUserStatus(userId: string, currentStatus: 0 | 1) {
     try {
       if (currentStatus === 1) {
         await disableUser(userId)
@@ -358,7 +358,7 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function approveContent(contentId: number, type: 'post' | 'comment') {
+  async function approveContent(contentId: string, type: 'post' | 'comment') {
     try {
       await approveContent(contentId, type)
       await fetchPendingContents()
@@ -368,7 +368,7 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function rejectContentItem(contentId: number, type: 'post' | 'comment', reason: string) {
+  async function rejectContentItem(contentId: string, type: 'post' | 'comment', reason: string) {
     try {
       await rejectContent(contentId, type, reason)
       await fetchPendingContents()

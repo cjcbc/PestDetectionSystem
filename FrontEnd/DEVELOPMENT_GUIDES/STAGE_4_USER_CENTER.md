@@ -68,7 +68,7 @@ GET /api/user/info
 
 ```typescript
 export interface UserVO {
-  id: number;
+  id: string;
   role: 0 | 1;           // 0=管理员, 1=普通用户
   username: string;
   email: string;
