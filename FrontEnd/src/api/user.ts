@@ -1,5 +1,5 @@
 import request from './request'
-import type { LoginPayload, LoginResponse, RegisterPayload, RegisterResponse, UserInfo, BindPayload } from '@/types/user'
+import type { LoginPayload, LoginResponse, RegisterPayload, RegisterResponse, UserInfo, BindPayload, ChangePasswordPayload } from '@/types/user'
 
 /**
  * 用户登录
@@ -23,17 +23,28 @@ export function getUserInfo(): Promise<UserInfo> {
 }
 
 /**
+ * 获取管理员信息
+ */
+export function getAdminInfo(): Promise<UserInfo> {
+  return request.get('/admin/info')
+}
+
+/**
  * 更新用户名
  */
-export function updateUsername(newUsername: string): Promise<UserInfo> {
-  return request.put('/user/username', { username: newUsername })
+export function updateUsername(username: string): Promise<UserInfo> {
+  return request.patch('/user/username', null, {
+    params: { username }
+  })
 }
 
 /**
  * 更新用户性别
  */
 export function updateSex(sex: 0 | 1 | 2): Promise<UserInfo> {
-  return request.put('/user/sex', { sex })
+  return request.patch('/user/sex', null, {
+    params: { sex }
+  })
 }
 
 /**
@@ -50,10 +61,24 @@ export function updateAvatar(file: File): Promise<{ code: number; message: strin
 }
 
 /**
+ * 修改用户密码
+ */
+export function changeUserPassword(payload: ChangePasswordPayload): Promise<{ code: number; message: string }> {
+  return request.patch('/user/password', payload)
+}
+
+/**
+ * 修改管理员密码
+ */
+export function changeAdminPassword(payload: ChangePasswordPayload): Promise<{ code: number; message: string }> {
+  return request.patch('/admin/password', payload)
+}
+
+/**
  * 绑定手机号或邮箱
  */
 export function bindPhoneEmail(payload: BindPayload): Promise<{ code: number; message: string }> {
-  return request.post('/user/bind', payload)
+  return request.patch('/user/bind', payload)
 }
 
 /**

@@ -6,7 +6,7 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  id: number
+  id: string
   role: 0 | 1  // 0=管理员，1=普通用户
   username: string
   email: string
@@ -31,7 +31,7 @@ export interface RegisterResponse {
 }
 
 export interface UserInfo {
-  id: number
+  id: string
   role: 0 | 1
   username: string
   email: string
@@ -46,4 +46,10 @@ export interface BindPayload {
   phone?: string
   email?: string
   bindType: 'PHONE' | 'EMAIL' | 'BOTH'
+}
+
+export interface ChangePasswordPayload {
+  oldPassword: string
+  newPassword: string
+  confirmPassword: string
 }

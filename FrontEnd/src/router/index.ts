@@ -19,31 +19,31 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'Home',
     component: () => import('@/views/Home.vue'),
-    meta: { title: '首页', requiresAuth: true }
+    meta: { title: '首页' }
   },
   {
     path: '/detection',
     name: 'Detection',
     component: () => import('@/views/Detection.vue'),
-    meta: { title: '病虫识别', requiresAuth: true }
+    meta: { title: '病虫识别' }
   },
   {
     path: '/detection/:id',
     name: 'DetectionDetail',
     component: () => import('@/views/DetectionDetail.vue'),
-    meta: { title: '识别详情', requiresAuth: true }
+    meta: { title: '识别详情' }
   },
   {
     path: '/chat',
     name: 'Chat',
     component: () => import('@/views/Chat.vue'),
-    meta: { title: 'AI 问答', requiresAuth: true }
+    meta: { title: 'AI 问答' }
   },
   {
     path: '/chat/:sessionId',
     name: 'ChatDetail',
     component: () => import('@/views/ChatDetail.vue'),
-    meta: { title: '会话详情', requiresAuth: true }
+    meta: { title: '会话详情' }
   },
   {
     path: '/user',
@@ -55,13 +55,13 @@ const routes: RouteRecordRaw[] = [
     path: '/forum',
     name: 'Forum',
     component: () => import('@/views/Forum.vue'),
-    meta: { title: '交流论坛', requiresAuth: true }
+    meta: { title: '交流论坛', canViewWithoutAuth: true }
   },
   {
     path: '/forum/post/:id',
     name: 'PostDetail',
     component: () => import('@/views/PostDetail.vue'),
-    meta: { title: '帖子详情', requiresAuth: true }
+    meta: { title: '帖子详情', canViewWithoutAuth: true }
   },
   {
     path: '/forum/create',
@@ -70,22 +70,36 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '发布帖子', requiresAuth: true }
   },
   {
-    path: '/admin/users',
-    name: 'AdminUsers',
-    component: () => import('@/views/admin/AdminUsers.vue'),
-    meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/admin/content',
-    name: 'AdminContent',
-    component: () => import('@/views/admin/AdminContent.vue'),
-    meta: { title: '内容管理', requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/admin/alerts',
-    name: 'AdminAlerts',
-    component: () => import('@/views/admin/AdminAlerts.vue'),
-    meta: { title: '告警管理', requiresAuth: true, requiresAdmin: true }
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+    redirect: '/admin/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('@/views/admin/Dashboard.vue'),
+        meta: { title: '管理仪表板', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/AdminUsers.vue'),
+        meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'content',
+        name: 'AdminContent',
+        component: () => import('@/views/admin/AdminContent.vue'),
+        meta: { title: '内容管理', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'alerts',
+        name: 'AdminAlerts',
+        component: () => import('@/views/admin/AdminAlerts.vue'),
+        meta: { title: '告警管理', requiresAuth: true, requiresAdmin: true }
+      }
+    ]
   },
   {
     path: '/:pathMatch(.*)*',
@@ -106,19 +120,16 @@ router.beforeEach((to, _from, next) => {
   const loggedIn = isLoggedIn()
   const adminRole = isAdmin()
 
+  // 检查是否需要认证
   if (to.meta.requiresAuth && !loggedIn) {
     ElMessage.warning('请先登录')
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-    return
-  }
-
-  if (to.meta.requiresAdmin && !adminRole) {
-    ElMessage.error('您没有权限访问此页面')
     next({ name: 'Home' })
     return
   }
 
-  if ((to.name === 'Login' || to.name === 'Register') && loggedIn) {
+  // 检查是否需要管理员权限
+  if (to.meta.requiresAdmin && !adminRole) {
+    ElMessage.error('您没有权限访问此页面')
     next({ name: 'Home' })
     return
   }

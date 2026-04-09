@@ -206,60 +206,65 @@ const registerRules = reactive<FormRules>({
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
-  await loginFormRef.value.validate(async (valid) => {
-    if (!valid) return
-    
-    loading.value = true
-    try {
-      const response = await login({
-        account: loginForm.account,
-        password: loginForm.password
-      })
-      
-      // 保存用户信息和token到store
-      appStore.setUser(response, response.token)
-      
-      ElMessage.success('登录成功')
-      
-      // 重定向到之前的页面或首页
-      const redirect = route.query.redirect as string
-      if (redirect && redirect.startsWith('/')) {
-        router.push(redirect)
-      } else {
-        router.push('/')
-      }
-    } catch (error) {
-      console.error('登录失败:', error)
-    } finally {
-      loading.value = false
+
+  const valid = await loginFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  loading.value = true
+  try {
+    const response = await login({
+      account: loginForm.account,
+      password: loginForm.password
+    })
+
+    // 保存用户信息和token到store
+    appStore.setUser(response, response.token)
+
+    // 存储待显示消息，转跳后会自动显示
+    appStore.setPendingMessage('success', '登录成功')
+
+    // 立即跳转
+    const redirect = route.query.redirect as string
+    if (redirect && redirect.startsWith('/')) {
+      await router.push(redirect)
+    } else {
+      await router.push('/')
     }
-  })
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : '未知错误'
+    ElMessage.error(`登录失败: ${errorMsg}`)
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleRegister = async () => {
   if (!registerFormRef.value) return
-  await registerFormRef.value.validate(async (valid) => {
-    if (!valid) return
-    
-    loading.value = true
-    try {
-      await register({
-        username: registerForm.username,
-        password: registerForm.password,
-        email: registerForm.email,
-        phone: registerForm.phone
-      })
-      
-      ElMessage.success('注册成功，请登录')
-      activeTab.value = 'login'
-      loginForm.account = registerForm.email || registerForm.phone || ''
-      registerFormRef.value?.resetFields()
-    } catch (error) {
-      console.error('注册失败:', error)
-    } finally {
-      loading.value = false
-    }
-  })
+
+  const valid = await registerFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  loading.value = true
+  try {
+    await register({
+      username: registerForm.username,
+      password: registerForm.password,
+      email: registerForm.email,
+      phone: registerForm.phone
+    })
+
+    // 存储待显示消息
+    appStore.setPendingMessage('success', '注册成功，请登录')
+
+    // 立即切换
+    activeTab.value = 'login'
+    loginForm.account = registerForm.email || registerForm.phone || ''
+    registerFormRef.value?.resetFields()
+  } catch (error) {
+    console.error('注册失败:', error)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

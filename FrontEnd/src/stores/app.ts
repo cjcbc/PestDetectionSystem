@@ -6,6 +6,7 @@ import type { UserInfo } from '@/types/user'
 export const useAppStore = defineStore('app', () => {
   const userInfo = ref<UserInfo | null>(getStoredUserInfo()) // 直接从 localStorage 初始化
   const token = ref<string | null>(getToken())
+  const pendingMessage = ref<{ type: 'success' | 'error' | 'warning' | 'info'; message: string } | null>(null)
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => userInfo.value?.role === 0)
@@ -37,14 +38,25 @@ export const useAppStore = defineStore('app', () => {
     setToken(newToken)
   }
 
+  function setPendingMessage(type: 'success' | 'error' | 'warning' | 'info', message: string) {
+    pendingMessage.value = { type, message }
+  }
+
+  function clearPendingMessage() {
+    pendingMessage.value = null
+  }
+
   return {
     userInfo,
     token,
     isLoggedIn,
     isAdmin,
+    pendingMessage,
     setUser,
     logout,
     setUserInfo,
-    updateToken
+    updateToken,
+    setPendingMessage,
+    clearPendingMessage
   }
 })
