@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/PestDetectionSystem.iml" filepath="$PROJECT_DIR$/.idea/PestDetectionSystem.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Graduation project.iml" filepath="$PROJECT_DIR$/.idea/Graduation project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/PestDetectionSystem/PestDetectionSystem.iml" filepath="$PROJECT_DIR$/PestDetectionSystem/PestDetectionSystem.iml" />
     </modules>
   </component>
 </project>
