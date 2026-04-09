@@ -64,10 +64,4 @@ if __name__ == "__main__":
         dropout=0.1,                              # Dropout率（仅分类头）
         overlap_mask=True,                        # 训练时使用重叠掩码（仅分割任务）
         
-        # ----- 其他 -----
-        seed=42,                                  # 固定随机种子
-        verbose=True,                             # 打印详细日志
-        plots=True,                               # 生成训练曲线图
-        project="runs/train",                     # 保存目录
-        name="yolov8x_140cls",                    # 实验名称
     )
