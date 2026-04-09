@@ -68,4 +68,19 @@ public class JwtUtil {
         return claims.get("role", Integer.class);
     }
 
+    /**
+     * 获取Token剩余有效时间（毫秒）
+     * @param token JWT Token
+     * @return 剩余有效时间（毫秒），如果已过期则返回0
+     */
+    public static long getUserAuthTTLFromToken(String token) {
+        Claims claims = parseToken(token);
+        long expiration = claims.getExpiration().getTime();
+        long ttl = expiration - System.currentTimeMillis();
+        System.out.println("exp: " + expiration);
+        System.out.println("current: " + System.currentTimeMillis());
+        System.out.println("ttl: " + ttl);
+        return Math.max(0, ttl);
+    }
+
 }

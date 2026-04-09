@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -143,6 +144,19 @@ public final class RedisUtil {
             return objectMapper.convertValue(value, clazz);
         } catch (IllegalArgumentException e) {
             log.warn("Redis value convert failed, key={}, targetType={}", key, clazz.getName(), e);
+            return null;
+        }
+    }
+
+    public <T> T get(String key, TypeReference<T> typeReference) {
+        Object value = get(key);
+        if (value == null) {
+            return null;
+        }
+        try {
+            return objectMapper.convertValue(value, typeReference);
+        } catch (IllegalArgumentException e) {
+            log.warn("Redis value convert failed, key={}, targetType={}", key, typeReference.getType(), e);
             return null;
         }
     }

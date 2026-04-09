@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Schema(description = "发送对话消息参数")
 public class SendChatMessageDTO {
-    private Long sessionId;
+    private String sessionId;
     private String message;
-    private Long detectionId;
+    private String detectionId;
 }

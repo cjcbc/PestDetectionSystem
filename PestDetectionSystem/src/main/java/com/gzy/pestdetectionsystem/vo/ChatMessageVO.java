@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "对话消息返回对象")
 public class ChatMessageVO {
-    private Long id;
-    private Long sessionId;
+    private String id;
+    private String sessionId;
+    private String detectionId;
     private String role;
     private String content;
     private String model;

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "发送消息后的回复对象")
 public class ChatReplyVO {
-    private Long sessionId;
+    private String sessionId;
     private String answer;
     private Integer promptTokens;
     private Integer completionTokens;

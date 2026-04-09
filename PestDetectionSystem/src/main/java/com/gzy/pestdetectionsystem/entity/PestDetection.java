@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 @Schema(description = "病虫害检测记录")
 public class PestDetection {
 
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.INPUT)
     private Long id;
 
     /** 用户ID */

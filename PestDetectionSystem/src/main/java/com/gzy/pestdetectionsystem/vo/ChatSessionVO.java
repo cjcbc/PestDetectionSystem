@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "对话会话返回对象")
 public class ChatSessionVO {
-    private Long id;
+    private String id;
     private String title;
     private String scene;
     private Integer messageCount;

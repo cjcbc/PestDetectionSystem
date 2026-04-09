@@ -6,6 +6,7 @@ import com.gzy.pestdetectionsystem.vo.ChatMessageVO;
 import com.gzy.pestdetectionsystem.vo.ChatQuotaVO;
 import com.gzy.pestdetectionsystem.vo.ChatReplyVO;
 import com.gzy.pestdetectionsystem.vo.ChatSessionVO;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -30,6 +31,11 @@ public interface ChatService {
      * 核心 发送对话
      */
     ChatReplyVO sendMessage(Long userId, SendChatMessageDTO dto);
+
+    /**
+     * 流式发送对话
+     */
+    SseEmitter sendMessageStream(Long userId, SendChatMessageDTO dto);
 
     /**
      *  删除对话

@@ -10,9 +10,11 @@ import com.gzy.pestdetectionsystem.service.LlmService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +69,26 @@ public class LlmServiceImpl implements LlmService {
         return doCall(messages);
     }
 
+    @Override
+    public Flux<String> chatWithContextStream(String systemPrompt,
+                                               List<LlmMessageDTO> historyMessages,
+                                               String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID);
+        }
+
+        List<LlmMessageDTO> messages = new ArrayList<>();
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            messages.add(new LlmMessageDTO("system", systemPrompt));
+        }
+        if (historyMessages != null && !historyMessages.isEmpty()) {
+            messages.addAll(historyMessages);
+        }
+        messages.add(new LlmMessageDTO("user", userMessage));
+
+        return doCallStream(messages);
+    }
+
     /**
      * 统一执行 LLM HTTP 调用
      */
@@ -115,5 +137,31 @@ public class LlmServiceImpl implements LlmService {
             log.error("[LLM] 调用失败: {}", e.getMessage(), e);
             throw new BusinessException(CommonErrorCode.LLM_CALL_FAILED, "调用LLM失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 流式调用 LLM，返回 SSE 原始行数据
+     */
+    private Flux<String> doCallStream(List<LlmMessageDTO> messages) {
+        if (llmProperties.getApiKey() == null || llmProperties.getApiKey().isBlank()) {
+            throw new BusinessException(CommonErrorCode.LLM_API_KEY_MISSING);
+        }
+
+        LlmChatRequestDTO requestDTO = new LlmChatRequestDTO();
+        requestDTO.setModel(llmProperties.getModel());
+        requestDTO.setMessages(messages);
+        requestDTO.setTemperature(llmProperties.getTemperature());
+        requestDTO.setMaxTokens(llmProperties.getMaxTokens());
+        requestDTO.setStream(true);
+
+        log.info("[LLM] 发起流式请求 model={}, messageCount={}", llmProperties.getModel(), messages.size());
+
+        return llmWebClient.post()
+                .uri(llmProperties.getChatPath())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + llmProperties.getApiKey())
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(requestDTO)
+                .retrieve()
+                .bodyToFlux(String.class);
     }
 }

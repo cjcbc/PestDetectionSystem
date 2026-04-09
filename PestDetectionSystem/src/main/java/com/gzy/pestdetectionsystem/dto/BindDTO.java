@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Schema(description = "绑定参数")
 public class BindDTO {
-    private Long id;// 唯一标识符
+    private String id;// 唯一标识符
     private String phone;
     private String email;
 

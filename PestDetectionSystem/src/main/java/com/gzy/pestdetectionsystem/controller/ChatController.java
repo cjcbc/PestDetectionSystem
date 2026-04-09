@@ -2,6 +2,8 @@ package com.gzy.pestdetectionsystem.controller;
 
 import com.gzy.pestdetectionsystem.dto.CreateChatSessionDTO;
 import com.gzy.pestdetectionsystem.dto.SendChatMessageDTO;
+import com.gzy.pestdetectionsystem.exception.BusinessException;
+import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.service.ChatService;
 import com.gzy.pestdetectionsystem.utils.Result;
 import com.gzy.pestdetectionsystem.vo.ChatMessageVO;
@@ -9,7 +11,9 @@ import com.gzy.pestdetectionsystem.vo.ChatReplyVO;
 import com.gzy.pestdetectionsystem.vo.ChatSessionVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -46,10 +50,14 @@ public class ChatController {
      * GET /api/chat/session/{sessionId}/messages
      */
     @GetMapping("/session/{sessionId}/messages")
-    public Result<List<ChatMessageVO>> getMessages(@PathVariable Long sessionId,
+    public Result<List<ChatMessageVO>> getMessages(@PathVariable String sessionId,
                                                    HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        return Result.ok(chatService.getMessages(userId, sessionId));
+        try {
+            return Result.ok(chatService.getMessages(userId, Long.valueOf(sessionId)));
+        } catch (NumberFormatException e) {
+            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "Invalid sessionId format");
+        }
     }
 
     /**
@@ -64,14 +72,29 @@ public class ChatController {
     }
 
     /**
+     * 流式发送消息（SSE）
+     * POST /api/chat/send/stream
+     */
+    @PostMapping(value = "/send/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter sendMessageStream(@RequestBody SendChatMessageDTO dto,
+                                        HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return chatService.sendMessageStream(userId, dto);
+    }
+
+    /**
      * 删除对话会话（逻辑删除）
      * DELETE /api/chat/session/{sessionId}
      */
     @DeleteMapping("/session/{sessionId}")
-    public Result<?> deleteSession(@PathVariable Long sessionId,
+    public Result<?> deleteSession(@PathVariable String sessionId,
                                    HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        chatService.deleteSession(userId, sessionId);
+        try {
+            chatService.deleteSession(userId, Long.valueOf(sessionId));
+        } catch (NumberFormatException e) {
+            throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "Invalid sessionId format");
+        }
         return Result.ok("删除成功");
     }
 

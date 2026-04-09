@@ -17,4 +17,6 @@ public class LlmChatRequestDTO {
 
     @JsonProperty("max_tokens")
     private Integer maxTokens;
+
+    private Boolean stream;
 }

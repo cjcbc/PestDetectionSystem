@@ -22,6 +22,7 @@ public enum CommonErrorCode {
     LOGIN_PARAM_INVALID(40010,"登录参数不合法"),
     LOGIN_ACCOUNT_NOT_FOUND(40011,"账号不存在"),
     LOGIN_PASSWORD_ERROR(40012,"账号或密码错误"),
+    USER_BANNED(40013,"用户已被禁用"),
 
     // 绑定 4002x
     BIND_PARAM_INVALID(40020,"绑定参数不合法"),
@@ -47,6 +48,12 @@ public enum CommonErrorCode {
     USER_AVATAR_EMPTY(40050, "头像文件不能为空"),
     USER_AVATAR_TYPE_INVALID(40051, "只能上传图片文件"),
     USER_AVATAR_TOO_LARGE(40052, "图片大小不能超过5MB"),
+
+    // 修改密码 4006x
+    CHANGE_PASSWORD_PARAM_INVALID(40060, "密码修改参数不合法"),
+    CHANGE_PASSWORD_OLD_PASSWORD_WRONG(40061, "原密码错误"),
+    CHANGE_PASSWORD_SAME_AS_OLD(40062, "新密码不能与原密码相同"),
+    CHANGE_PASSWORD_NOT_MATCH(40063, "两次输入的新密码不一致"),
 
     UNKNOWN(999999, "未知错误");
 

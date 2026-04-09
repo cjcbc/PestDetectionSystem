@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.config;
 
+import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -23,5 +24,10 @@ public class RedisConfig {
         template.setHashValueSerializer(jsonSerializer);
         template.afterPropertiesSet();
         return template;
+    }
+
+    @Bean
+    public SnowflakeIdGenerator snowflakeIdGenerator() {
+        return new SnowflakeIdGenerator();
     }
 }

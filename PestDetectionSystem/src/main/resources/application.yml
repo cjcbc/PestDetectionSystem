@@ -37,7 +37,7 @@ jwt:
 
 llm:
   base-url: https://api.minimaxi.com/v1
-  api-key:
+  api-key: sk-cp-X1VcaIrryShpehZjo8Di0MvLWOZeDTNKgZFYzn49-SZn83ETfitlyZD-4bbVYtR0cjG-am93NClVxfpAlyE0WWBd2d8ngtI0mcRuMjqGAZAEJ91b0EGM_i8
   chat-path: /chat/completions
   model: MiniMax-M2.7
   temperature: 1.0

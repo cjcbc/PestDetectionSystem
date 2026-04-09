@@ -77,6 +77,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPhone(dto.getPhone());
         user.setPassword(encrypted);
         user.setSalt(salt);
+        user.setStatus(1);
         user.setCreatedTime(System.currentTimeMillis());
         log.debug("注册用户准备入库，userId={}, username = {}", id, username);
 
@@ -94,6 +95,9 @@ public class AuthServiceImpl implements AuthService {
 
         if (user == null) {
             throw new BusinessException(CommonErrorCode.LOGIN_ACCOUNT_NOT_FOUND);
+        }
+        if (user.getStatus() != 1) {
+            throw new BusinessException(CommonErrorCode.USER_BANNED);
         }
         if (!PasswordUtil.verifyPassword(dto.getPassword(), user.getSalt(), user.getPassword())) {
             throw new BusinessException(CommonErrorCode.LOGIN_PASSWORD_ERROR);
@@ -118,10 +122,9 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(CommonErrorCode.BIND_PARAM_INVALID);
         }
         Long userId = (Long) request.getAttribute("userId");
-        dto.setId(userId);
-        log.info("用户绑定请求，userId={}, bindType={}", dto.getId(), dto.getBindType());
+        log.info("用户绑定请求，userId={}, bindType={}", userId, dto.getBindType());
 
-        User user = userMapper.selectById(dto.getId());
+        User user = userMapper.selectById(userId);
 
         //确定要绑定哪个
         switch (dto.getBindType()) {

@@ -8,6 +8,8 @@ import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.PestDetectionMapper;
 import com.gzy.pestdetectionsystem.service.PestDetectionService;
+import com.gzy.pestdetectionsystem.utils.RedisUtil;
+import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
 import com.gzy.pestdetectionsystem.vo.PestDetectionVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,11 +41,18 @@ public class PestDetectionServiceImpl implements PestDetectionService {
     private static final String NOT_DETECTED_LABEL = "未检测到病虫害";
     private static final String PEST_IMAGE_DIR = "D:\\SHU files\\Graduation project\\PestDetectionSystem\\pest-images";
     private static final String ANNOTATED_SUFFIX = "_annotated";
+    
+    private static final long DETECTION_RECORD_CACHE_TTL_SECONDS = 30 * 60;
+    private static final String DETECTION_RECORD_CACHE_KEY_PREFIX = "detection:record:";
 
     private final PestDetectionMapper pestDetectionMapper;
 
     @Qualifier("modelWebClient")
     private final WebClient modelWebClient;
+
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
+    
+    private final RedisUtil redisUtil;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -85,7 +94,7 @@ public class PestDetectionServiceImpl implements PestDetectionService {
         }
 
         PestDetection detection = new PestDetection();
-        detection.setId(System.currentTimeMillis());
+        detection.setId(snowflakeIdGenerator.nextId());
         detection.setUserId(userId);
         detection.setImageUrl(annotatedPath);
         detection.setOriginalFileName(originalImageName);
@@ -97,15 +106,30 @@ public class PestDetectionServiceImpl implements PestDetectionService {
         detection.setCreatedTime(now);
         detection.setUpdatedTime(now);
         pestDetectionMapper.insert(detection);
+        
+        // 缓存检测结果
+        PestDetectionVO vo = toVO(detection);
+        cacheDetectionRecord(userId, vo);
 
         log.info("用户 {} 检测完成: class={}, confidence={}, status={}, annotatedPath={}",
                 userId, className, confidence, status, annotatedPath);
 
-        return toVO(detection);
+        return vo;
     }
 
     @Override
     public List<PestDetectionVO> getRecords(Long userId) {
+        // 先尝试从缓存获取
+        String cacheKey = buildDetectionRecordsCacheKey(userId);
+        Object cachedObject = redisUtil.get(cacheKey, Object.class);
+        if (cachedObject instanceof List) {
+            log.info("detection records cache hit, userId={}", userId);
+            @SuppressWarnings("unchecked")
+            List<PestDetectionVO> cachedRecords = (List<PestDetectionVO>) cachedObject;
+            return cachedRecords;
+        }
+        
+        log.info("detection records cache missed, userId={}", userId);
         LambdaQueryWrapper<PestDetection> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PestDetection::getUserId, userId)
                 .orderByDesc(PestDetection::getCreatedTime);
@@ -116,14 +140,19 @@ public class PestDetectionServiceImpl implements PestDetectionService {
         for (PestDetection record : records) {
             voList.add(toVO(record));
         }
+        
+        // 缓存记录列表
+        if (!voList.isEmpty()) {
+            cacheDetectionRecords(userId, voList);
+        }
 
         return voList;
     }
 
     private PestDetectionVO toVO(PestDetection detection) {
         PestDetectionVO vo = new PestDetectionVO();
-        vo.setId(detection.getId());
-        vo.setUserId(detection.getUserId());
+        vo.setId(String.valueOf(detection.getId()));
+        vo.setUserId(String.valueOf(detection.getUserId()));
         vo.setImageName(extractFileName(detection.getImageUrl()));
         vo.setTopLabel(detection.getTopLabel());
         vo.setConfidence(detection.getConfidence());
@@ -208,5 +237,39 @@ public class PestDetectionServiceImpl implements PestDetectionService {
         } catch (Exception e) {
             return obj.toString();
         }
+    }
+    
+    private String buildDetectionRecordsCacheKey(Long userId) {
+        return DETECTION_RECORD_CACHE_KEY_PREFIX + userId;
+    }
+    
+    private void cacheDetectionRecord(Long userId, PestDetectionVO record) {
+        if (record == null || userId == null) {
+            return;
+        }
+        
+        // 更新整个列表缓存时，先清除旧的缓存
+        evictDetectionRecordsCache(userId);
+        log.info("detection record cache updated, userId={}", userId);
+    }
+    
+    private void cacheDetectionRecords(Long userId, List<PestDetectionVO> records) {
+        if (records == null || userId == null) {
+            return;
+        }
+        String cacheKey = buildDetectionRecordsCacheKey(userId);
+        boolean cached = redisUtil.set(cacheKey, records, DETECTION_RECORD_CACHE_TTL_SECONDS);
+        if (cached) {
+            log.info("detection records cache updated, userId={}, ttlSeconds={}", userId, DETECTION_RECORD_CACHE_TTL_SECONDS);
+        }
+    }
+    
+    private void evictDetectionRecordsCache(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        String cacheKey = buildDetectionRecordsCacheKey(userId);
+        redisUtil.del(cacheKey);
+        log.info("detection records cache evicted, userId={}", userId);
     }
 }

@@ -3,6 +3,7 @@ package com.gzy.pestdetectionsystem.interceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gzy.pestdetectionsystem.utils.Result;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
+import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
@@ -14,10 +15,13 @@ import java.util.Set;
 @Component
 public class CommonInterceptor implements HandlerInterceptor {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
     private final Set<Integer> allowedRoles;
+    private final RedisUtil redisUtil;
 
-    public CommonInterceptor(Set<Integer> allowedRoles) {
+    public CommonInterceptor(Set<Integer> allowedRoles, RedisUtil redisUtil) {
         this.allowedRoles = allowedRoles;
+        this.redisUtil = redisUtil;
     }
 
     @Override
@@ -32,6 +36,12 @@ public class CommonInterceptor implements HandlerInterceptor {
         }
 
         String token = authHeader.substring(7);
+
+        // 检查 Token 黑名单
+        if (redisUtil.hasKey(TOKEN_BLACKLIST_PREFIX + token)) {
+            writeResult(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+            return false;
+        }
 
         Long userId;
         int roleId;

@@ -13,9 +13,9 @@ import java.math.BigDecimal;
 @Schema(description = "病虫害检测结果")
 public class PestDetectionVO {
 
-    private Long id;
+    private String id;
 
-    private Long userId;
+    private String userId;
 
     private String imageName;
 

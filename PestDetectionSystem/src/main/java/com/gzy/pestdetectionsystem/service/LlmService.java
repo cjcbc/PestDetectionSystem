@@ -2,6 +2,7 @@ package com.gzy.pestdetectionsystem.service;
 
 import com.gzy.pestdetectionsystem.dto.LlmChatResponseDTO;
 import com.gzy.pestdetectionsystem.dto.LlmMessageDTO;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -21,6 +22,13 @@ public interface LlmService {
      * @return LLM 响应
      */
     LlmChatResponseDTO chatWithContext(String systemPrompt,
+                                       List<LlmMessageDTO> historyMessages,
+                                       String userMessage);
+
+    /**
+     * 流式连续对话，返回 SSE 原始行数据流
+     */
+    Flux<String> chatWithContextStream(String systemPrompt,
                                        List<LlmMessageDTO> historyMessages,
                                        String userMessage);
 }
