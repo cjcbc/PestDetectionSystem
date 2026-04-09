@@ -257,26 +257,6 @@ img {
   }
 }
 
-/* Element Plus 主题覆盖 */
-.el-message {
-  z-index: var(--z-notification);
-}
-
-.el-dialog {
-  z-index: var(--z-modal);
-}
-
-.el-drawer {
-  z-index: var(--z-modal);
-}
-
-.el-popover {
-  z-index: var(--z-dropdown);
-}
-
-.el-dropdown-menu {
-  z-index: var(--z-dropdown);
-}
 
 /* 加载态 */
 .loading {

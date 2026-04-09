@@ -1,19 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [
     vue(),
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
   ],
   resolve: {
     alias: {
@@ -27,9 +18,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8888',
         changeOrigin: true,
-        pathRewrite: {
-          '^/api': '/api'
-        }
       }
     }
   },
@@ -43,6 +31,10 @@ export default defineConfig({
 
           if (id.includes('markdown-it') || id.includes('highlight.js') || id.includes('dompurify')) {
             return 'chat-renderer'
+          }
+
+          if (id.includes('@element-plus/icons-vue')) {
+            return 'element-plus-icons'
           }
 
           if (id.includes('element-plus')) {
