@@ -1,5 +1,14 @@
 <template>
   <div class="detection-page">
+    <!-- 未登录状态提示 -->
+    <div v-if="!userIsLoggedIn" class="auth-required-overlay">
+      <el-empty description="识别功能需要登录">
+        <el-button type="primary" @click="openAuthModal">立即登录</el-button>
+      </el-empty>
+    </div>
+
+    <!-- 已登录的完整功能 -->
+    <template v-else>
     <h2>病虫害智能识别</h2>
 
     <el-card class="upload-card">
@@ -151,6 +160,7 @@
         />
       </div>
     </el-card>
+    </template>
   </div>
 </template>
 
@@ -158,12 +168,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ChatDotRound, Refresh, UploadFilled } from '@element-plus/icons-vue'
+import { isLoggedIn } from '@/utils/auth'
+import { useAuthModalStore } from '@/stores/auth-modal'
 import { detect, getDetectRecords } from '@/api/detect'
 import type { DetectResult } from '@/types/detect'
 import { fileToBase64, isImageFile } from '@/utils/image'
 
 const router = useRouter()
+const authModalStore = useAuthModalStore()
+
+const userIsLoggedIn = computed(() => isLoggedIn())
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
@@ -239,6 +253,13 @@ function clearSelection() {
 }
 
 async function handleDetect() {
+  // 检查是否登录
+  if (!userIsLoggedIn.value) {
+    ElMessage.warning('识别功能需要登录')
+    authModalStore.open()
+    return
+  }
+
   if (!selectedFile.value) {
     ElMessage.warning('请先选择图片')
     return
@@ -260,6 +281,11 @@ async function handleDetect() {
 }
 
 async function loadRecords() {
+  // 检查是否登录
+  if (!userIsLoggedIn.value) {
+    return
+  }
+
   try {
     isLoadingRecords.value = true
     records.value = await getDetectRecords()
@@ -324,6 +350,10 @@ function getStatusCircleColor(status: number): string {
   if (status === 1) return '#67c23a'
   if (status === 0) return '#e6a23c'
   return '#909399'
+}
+
+function openAuthModal() {
+  authModalStore.open()
 }
 
 onMounted(() => {
@@ -449,6 +479,17 @@ h2 {
   margin-top: var(--spacing-lg);
   display: flex;
   justify-content: center;
+}
+
+.auth-required-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.05) 0%, rgba(64, 158, 255, 0.05) 100%);
+  border-radius: 8px;
+  margin: 20px;
+  padding: 40px;
 }
 
 @media (max-width: 768px) {

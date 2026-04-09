@@ -136,7 +136,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ChatDotRound, Download, InfoFilled, Plus } from '@element-plus/icons-vue'
 import { getDetectRecords } from '@/api/detect'
 import type { DetectResult } from '@/types/detect'
 

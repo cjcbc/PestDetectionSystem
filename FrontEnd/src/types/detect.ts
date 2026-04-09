@@ -9,8 +9,8 @@ export interface DetectPayload {
  * 识别结果
  */
 export interface DetectResult {
-  id: number
-  userId: number
+  id: string
+  userId: string
   imageName: string
   topLabel: string
   confidence: number
