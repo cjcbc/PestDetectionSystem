@@ -1,6 +1,14 @@
 <template>
   <div class="chat-page">
-    <div class="chat-shell">
+    <!-- 未登录状态提示 -->
+    <div v-if="!userIsLoggedIn" class="auth-required-overlay">
+      <el-empty description="AI 对话功能需要登录">
+        <el-button type="primary" @click="openAuthModal">立即登录</el-button>
+      </el-empty>
+    </div>
+
+    <!-- 已登录的完整功能 -->
+    <div v-else class="chat-shell">
       <aside class="chat-sidebar">
         <div class="chat-sidebar__header">
           <el-button type="primary" size="large" style="width: 100%" @click="openCreateDialog()">
@@ -121,13 +129,17 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowRight } from '@element-plus/icons-vue'
+import { isLoggedIn } from '@/utils/auth'
+import { useAuthModalStore } from '@/stores/auth-modal'
 import { useChatStore } from '@/stores/chat'
 import { formatSessionTime } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()
 const chatStore = useChatStore()
+const authModalStore = useAuthModalStore()
+
+const userIsLoggedIn = computed(() => isLoggedIn())
 
 const dialogVisible = ref(false)
 const submitting = ref(false)
@@ -167,14 +179,14 @@ const activeSessionId = computed(() => {
     return null
   }
 
-  return Number(raw)
+  return String(raw)
 })
 
 const detectionLabel = computed(() => String(route.query.detectionLabel || '').trim())
 const detectionQuestion = computed(() => String(route.query.question || '').trim())
 const detectionId = computed(() => {
-  const raw = Number(route.query.detectionId)
-  return Number.isFinite(raw) ? raw : undefined
+  const raw = String(route.query.detectionId || '').trim()
+  return raw && Number.isFinite(Number(raw)) ? raw : undefined
 })
 
 function openCreateDialog(message = '') {
@@ -188,6 +200,13 @@ async function createAndOpenWithMessage(message: string) {
 }
 
 async function handleCreateSession() {
+  // 检查是否登录
+  if (!userIsLoggedIn.value) {
+    ElMessage.warning('对话功能需要登录')
+    authModalStore.open()
+    return
+  }
+
   submitting.value = true
 
   try {
@@ -223,7 +242,7 @@ async function handleCreateSession() {
   }
 }
 
-function goToSession(sessionId: number) {
+function goToSession(sessionId: string) {
   router.push({
     name: 'ChatDetail',
     params: { sessionId },
@@ -231,7 +250,14 @@ function goToSession(sessionId: number) {
   })
 }
 
-async function handleDeleteSession(sessionId: number) {
+async function handleDeleteSession(sessionId: string) {
+  // 检查是否登录
+  if (!userIsLoggedIn.value) {
+    ElMessage.warning('对话功能需要登录')
+    authModalStore.open()
+    return
+  }
+
   try {
     await chatStore.removeSession(sessionId)
     ElMessage.success('会话已删除')
@@ -240,7 +266,27 @@ async function handleDeleteSession(sessionId: number) {
   }
 }
 
+function openAuthModal() {
+  authModalStore.open()
+}
+
 onMounted(async () => {
-  await Promise.all([chatStore.fetchSessions(), chatStore.fetchQuota()])
+  // 只在登录状态下才加载会话和额度信息
+  if (userIsLoggedIn.value) {
+    await Promise.all([chatStore.fetchSessions(), chatStore.fetchQuota()])
+  }
 })
 </script>
+
+<style scoped>
+.auth-required-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.05) 0%, rgba(64, 158, 255, 0.05) 100%);
+  border-radius: 8px;
+  margin: 20px;
+  padding: 40px;
+}
+</style>

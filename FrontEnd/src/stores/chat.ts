@@ -6,17 +6,19 @@ import {
   getMessages,
   getQuota,
   getSessions,
-  sendMessage
+  sendMessage,
+  sendMessageStream
 } from '@/api/chat'
 import type {
   ChatMessage,
   ChatQuota,
+  ChatReply,
   ChatSession,
   CreateSessionPayload
 } from '@/types/chat'
 
 function dedupeMessages(messages: ChatMessage[]) {
-  const seen = new Set<number>()
+  const seen = new Set<string>()
   return messages.filter((message) => {
     if (seen.has(message.id)) {
       return false
@@ -28,12 +30,15 @@ function dedupeMessages(messages: ChatMessage[]) {
 
 export const useChatStore = defineStore('chat', () => {
   const sessions = ref<ChatSession[]>([])
-  const currentSessionId = ref<number | null>(null)
+  const currentSessionId = ref<string | null>(null)
   const messages = ref<ChatMessage[]>([])
   const quota = ref<ChatQuota | null>(null)
   const isSessionsLoading = ref(false)
   const isMessagesLoading = ref(false)
   const isSending = ref(false)
+  /** 流式输出中的中间状态 */
+  const streamingContent = ref('')
+  const isStreaming = ref(false)
 
   const currentSession = computed(() =>
     sessions.value.find((session) => session.id === currentSessionId.value) ?? null
@@ -61,7 +66,7 @@ export const useChatStore = defineStore('chat', () => {
     return session
   }
 
-  async function loadMessages(sessionId: number) {
+  async function loadMessages(sessionId: string) {
     currentSessionId.value = sessionId
     isMessagesLoading.value = true
     try {
@@ -72,30 +77,85 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function sendMsg(content: string, detectionId?: number) {
+  async function sendMsg(content: string, detectionId?: string) {
     if (!currentSessionId.value) {
       return
     }
 
-    isSending.value = true
-    try {
-      await sendMessage({
-        sessionId: currentSessionId.value,
-        message: content,
-        detectionId
-      })
+    // 添加临时用户消息
+    const tempUserMessage: ChatMessage = {
+      id: `temp-user-${Date.now()}`,
+      role: 'user',
+      content,
+      createdTime: Date.now()
+    }
+    messages.value = [...messages.value, tempUserMessage]
 
-      await Promise.all([
-        loadMessages(currentSessionId.value),
-        fetchSessions(),
-        fetchQuota()
-      ])
-    } finally {
+    // 添加临时 AI 消息占位（流式内容会实时写入）
+    const tempAiMessage: ChatMessage = {
+      id: `temp-ai-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      createdTime: Date.now()
+    }
+    messages.value = [...messages.value, tempAiMessage]
+
+    isSending.value = true
+    isStreaming.value = true
+    streamingContent.value = ''
+
+    try {
+      await sendMessageStream(
+        {
+          sessionId: currentSessionId.value,
+          message: content,
+          detectionId
+        },
+        // onDelta: 增量文本
+        (delta: string) => {
+          streamingContent.value += delta
+          // 实时更新临时 AI 消息内容
+          const idx = messages.value.findIndex((m) => m.id === tempAiMessage.id)
+          if (idx !== -1) {
+            messages.value[idx] = {
+              ...messages.value[idx],
+              content: streamingContent.value
+            }
+          }
+        },
+        // onDone: 流结束
+        async () => {
+          isStreaming.value = false
+          isSending.value = false
+          // 重新加载真实消息（含数据库 ID）
+          await Promise.all([
+            loadMessages(currentSessionId.value!),
+            fetchSessions(),
+            fetchQuota()
+          ])
+        },
+        // onError
+        (err: string) => {
+          isStreaming.value = false
+          isSending.value = false
+          // 移除临时消息
+          messages.value = messages.value.filter(
+            (m) => m.id !== tempUserMessage.id && m.id !== tempAiMessage.id
+          )
+          throw new Error(err)
+        }
+      )
+    } catch {
+      isStreaming.value = false
       isSending.value = false
+      messages.value = messages.value.filter(
+        (m) => m.id !== tempUserMessage.id && m.id !== tempAiMessage.id
+      )
+      throw new Error('发送消息失败')
     }
   }
 
-  async function removeSession(sessionId: number) {
+  async function removeSession(sessionId: string) {
     await deleteSession(sessionId)
     sessions.value = sessions.value.filter((session) => session.id !== sessionId)
 
@@ -118,6 +178,8 @@ export const useChatStore = defineStore('chat', () => {
     isSessionsLoading,
     isMessagesLoading,
     isSending,
+    isStreaming,
+    streamingContent,
     currentSession,
     fetchSessions,
     fetchQuota,

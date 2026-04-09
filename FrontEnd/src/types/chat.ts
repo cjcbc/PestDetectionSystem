@@ -1,7 +1,7 @@
 export type ChatRole = 'user' | 'assistant'
 
 export interface ChatSession {
-  id: number
+  id: string
   title: string
   scene: string
   messageCount: number
@@ -16,8 +16,9 @@ export interface CreateSessionPayload {
 }
 
 export interface ChatMessage {
-  id: number
-  sessionId: number
+  id: string
+  sessionId: string
+  detectionId?: string | null
   role: ChatRole
   content: string
   model: string | null
@@ -28,13 +29,13 @@ export interface ChatMessage {
 }
 
 export interface SendMessagePayload {
-  sessionId: number
+  sessionId: string
   message: string
-  detectionId?: number
+  detectionId?: string
 }
 
 export interface ChatReply {
-  sessionId: number
+  sessionId: string
   answer: string
   promptTokens: number
   completionTokens: number

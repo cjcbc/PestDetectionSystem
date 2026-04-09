@@ -1,6 +1,12 @@
 .chat-page,
-.chat-detail-page {
+.chat-detail-page,
+.chatgpt-page {
   min-height: calc(100vh - 150px);
+}
+
+.chatgpt-page {
+  height: calc(100vh - 146px);
+  min-height: 0;
 }
 
 .chat-shell {
