@@ -25,8 +25,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/admin/**")
                 .excludePathPatterns("/admin/login", "/admin/logout");
 
-        // 用户拦截器（角色1）- 拦截 /user /detect /chat 路径
-        registry.addInterceptor(new CommonInterceptor(Set.of(1), redisUtil))
+        // 用户拦截器（角色0和1）- 拦截 /user /detect /chat 路径
+        registry.addInterceptor(new CommonInterceptor(Set.of(0, 1), redisUtil))
                 .addPathPatterns("/user/**", "/detect/**", "/chat/**")
                 .excludePathPatterns(
                         "/user/login",
