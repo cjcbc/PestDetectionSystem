@@ -14,6 +14,7 @@
 | 4️⃣ | 用户中心 | [STAGE_4_USER_CENTER.md](./STAGE_4_USER_CENTER.md) | P1 | 1-2 天 | 个人资料，头像上传 |
 | 5️⃣ | 社区论坛 | [STAGE_5_FORUM.md](./STAGE_5_FORUM.md) | P2 | 4-5 天 | 富文本编辑，评论交互 |
 | 6️⃣ | 管理后台 | [STAGE_6_ADMIN.md](./STAGE_6_ADMIN.md) | P3 | 2-3 天 | 权限控制，内容管理 |
+| 7️⃣ | 论坛互动增强与预警中心 | [STAGE_7_INTERACTION_AND_WARNING.md](./STAGE_7_INTERACTION_AND_WARNING.md) | P1 | 4-6 天 | 评论、点赞、预警中心、后台预警联动 |
 
 ---
 
@@ -33,6 +34,10 @@
 第三轮：扩展功能
 ├─ STAGE_5 论坛（依赖 STAGE_1）
 └─ STAGE_6 管理（依赖 STAGE_1）
+
+第四轮：联调与体验补强
+├─ STAGE_7 论坛互动增强（依赖 STAGE_5 占位页）
+└─ STAGE_7 预警中心（依赖 STAGE_6 管理入口）
 ```
 
 ### 每个阶段的验证清单
@@ -91,7 +96,8 @@ FrontEnd/
 │   ├── STAGE_3_CHAT.md
 │   ├── STAGE_4_USER_CENTER.md
 │   ├── STAGE_5_FORUM.md
-│   └── STAGE_6_ADMIN.md
+│   ├── STAGE_6_ADMIN.md
+│   └── STAGE_7_INTERACTION_AND_WARNING.md
 │
 ├── src/
 │   ├── api/
@@ -181,13 +187,15 @@ STAGE_1 基础架构（API + 认证 + 状态）
     │
     ├─→ STAGE_3 对话（依赖 1）
     ├─→ STAGE_5 论坛（依赖 1）
-    └─→ STAGE_6 管理（依赖 1）
+  ├─→ STAGE_6 管理（依赖 1）
+  └─→ STAGE_7 互动增强与预警中心（依赖 5 和 6）
 ```
 
 **说明**：
 - STAGE_1 是基础，其他章节都依赖它
 - STAGE_2、STAGE_4 可与 STAGE_1 并行
 - STAGE_3、STAGE_5、STAGE_6 需在 STAGE_1 完成后开始
+- STAGE_7 适合作为论坛与管理端接口完成后的联调阶段
 
 ---
 

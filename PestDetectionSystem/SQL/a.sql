@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `pest_detection_system` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `pest_detection_system`;
 -- MySQL dump 10.13  Distrib 8.0.40, for Win64 (x86_64)
 --
 -- Host: localhost    Database: pest_detection_system
@@ -51,15 +53,6 @@ CREATE TABLE `article` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `article`
---
-
-LOCK TABLES `article` WRITE;
-/*!40000 ALTER TABLE `article` DISABLE KEYS */;
-/*!40000 ALTER TABLE `article` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `article_comment`
 --
 
@@ -89,15 +82,6 @@ CREATE TABLE `article_comment` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `article_comment`
---
-
-LOCK TABLES `article_comment` WRITE;
-/*!40000 ALTER TABLE `article_comment` DISABLE KEYS */;
-/*!40000 ALTER TABLE `article_comment` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `article_like`
 --
 
@@ -119,15 +103,6 @@ CREATE TABLE `article_like` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `article_like`
---
-
-LOCK TABLES `article_like` WRITE;
-/*!40000 ALTER TABLE `article_like` DISABLE KEYS */;
-/*!40000 ALTER TABLE `article_like` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `chat_message`
 --
 
@@ -146,23 +121,16 @@ CREATE TABLE `chat_message` (
   `total_tokens` int unsigned NOT NULL DEFAULT '0' COMMENT '总token数',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '消息状态：0失败，1成功',
   `created_time` bigint unsigned NOT NULL COMMENT '创建时间戳（毫秒）',
+  `detection_id` bigint DEFAULT NULL COMMENT '关联的检测记录ID',
   PRIMARY KEY (`id`),
   KEY `idx_chat_message_session_id` (`session_id`),
   KEY `idx_chat_message_user_id` (`user_id`),
   KEY `idx_chat_message_created_time` (`created_time`),
+  KEY `idx_chat_message_detection` (`detection_id`),
   CONSTRAINT `fk_chat_message_session` FOREIGN KEY (`session_id`) REFERENCES `chat_session` (`id`),
   CONSTRAINT `fk_chat_message_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM对话消息表';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `chat_message`
---
-
-LOCK TABLES `chat_message` WRITE;
-/*!40000 ALTER TABLE `chat_message` DISABLE KEYS */;
-/*!40000 ALTER TABLE `chat_message` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `chat_quota_daily`
@@ -186,15 +154,6 @@ CREATE TABLE `chat_quota_daily` (
   CONSTRAINT `fk_chat_quota_daily_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM对话每日额度表';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `chat_quota_daily`
---
-
-LOCK TABLES `chat_quota_daily` WRITE;
-/*!40000 ALTER TABLE `chat_quota_daily` DISABLE KEYS */;
-/*!40000 ALTER TABLE `chat_quota_daily` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `chat_session`
@@ -225,15 +184,6 @@ CREATE TABLE `chat_session` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `chat_session`
---
-
-LOCK TABLES `chat_session` WRITE;
-/*!40000 ALTER TABLE `chat_session` DISABLE KEYS */;
-/*!40000 ALTER TABLE `chat_session` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `comment_like`
 --
 
@@ -253,15 +203,6 @@ CREATE TABLE `comment_like` (
   CONSTRAINT `fk_comment_like_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论点赞记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `comment_like`
---
-
-LOCK TABLES `comment_like` WRITE;
-/*!40000 ALTER TABLE `comment_like` DISABLE KEYS */;
-/*!40000 ALTER TABLE `comment_like` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `detection_record`
@@ -287,16 +228,6 @@ CREATE TABLE `detection_record` (
   CONSTRAINT `fk_detection_record_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='病虫害识别记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `detection_record`
---
-
-LOCK TABLES `detection_record` WRITE;
-/*!40000 ALTER TABLE `detection_record` DISABLE KEYS */;
-INSERT INTO `detection_record` VALUES (1775308825076,31136369741824,'D:\\SHU files\\Graduation project\\PestDetectionSystem\\pest-images\\31136369741824_1775308824634.jpg','base64_image','{\"device\":\"0\",\"image_name\":\"base64_image\",\"image_size\":{\"height\":256,\"width\":256},\"prediction_count\":1,\"predictions\":[{\"bbox\":[21,0,253,256],\"class_id\":102,\"class_name\":\"Apple___Apple_scab 苹果黑星病\",\"confidence\":0.982156}],\"success\":true,\"threshold\":0.25}','Apple___Apple_scab 苹果黑星病',0.9822,1,1775308825080,1775308825080),(1775308860432,31136369741824,'D:\\SHU files\\Graduation project\\PestDetectionSystem\\pest-images\\31136369741824_1775308860337.jpg','base64_image','{\"device\":\"0\",\"image_name\":\"base64_image\",\"image_size\":{\"height\":256,\"width\":256},\"prediction_count\":1,\"predictions\":[{\"bbox\":[21,0,253,256],\"class_id\":102,\"class_name\":\"Apple___Apple_scab 苹果黑星病\",\"confidence\":0.982156}],\"success\":true,\"threshold\":0.25}','Apple___Apple_scab 苹果黑星病',0.9822,1,1775308860432,1775308860432),(1775308862956,31136369741824,'D:\\SHU files\\Graduation project\\PestDetectionSystem\\pest-images\\31136369741824_1775308862893.jpg','base64_image','{\"device\":\"0\",\"image_name\":\"base64_image\",\"image_size\":{\"height\":256,\"width\":256},\"prediction_count\":1,\"predictions\":[{\"bbox\":[21,0,253,256],\"class_id\":102,\"class_name\":\"Apple___Apple_scab 苹果黑星病\",\"confidence\":0.982156}],\"success\":true,\"threshold\":0.25}','Apple___Apple_scab 苹果黑星病',0.9822,1,1775308862956,1775308862956);
-/*!40000 ALTER TABLE `detection_record` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `feedback`
@@ -330,15 +261,6 @@ CREATE TABLE `feedback` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `feedback`
---
-
-LOCK TABLES `feedback` WRITE;
-/*!40000 ALTER TABLE `feedback` DISABLE KEYS */;
-/*!40000 ALTER TABLE `feedback` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `user`
 --
 
@@ -368,16 +290,6 @@ CREATE TABLE `user` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `user`
---
-
-LOCK TABLES `user` WRITE;
-/*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (31136369741824,'admin','1c9ffb0ac7b95b4790b5ca27c8e892d3ce3dbf8ada7dd801043212a48f2cc0f1','7cdedfc6df0ca0e5b097c4d65c1bd8a9',NULL,'1553812',1768318557658,1,'D:\\SHU files\\Graduation project\\PestDetectionSystem\\images/31136369741824_1775303167554.jpg',0,NULL,NULL,NULL),(10450630334353408,'abcde','140a04e6b13868879212ca729d6df3abc09c0104a7d5cc70866c50ee9ef7ab9b','0fa399add79dfd3d39288ec29d3be5d4','Gzy@shu.edu.cn','19971845984',1770802758604,1,NULL,1,NULL,NULL,NULL),(10506992590393344,'admin','acd95dafabdeaa3090e96f82edbc4bf05da67cead88064f1bbf4c9386023a852','11e3d9708bc4b9399e36252605c9a3ed',NULL,'123456789111',1770816196413,0,NULL,0,NULL,NULL,NULL);
-/*!40000 ALTER TABLE `user` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `user_fan`
 --
 
@@ -399,15 +311,6 @@ CREATE TABLE `user_fan` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `user_fan`
---
-
-LOCK TABLES `user_fan` WRITE;
-/*!40000 ALTER TABLE `user_fan` DISABLE KEYS */;
-/*!40000 ALTER TABLE `user_fan` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `user_follow`
 --
 
@@ -425,15 +328,6 @@ CREATE TABLE `user_follow` (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='APP用户关注信息表';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `user_follow`
---
-
-LOCK TABLES `user_follow` WRITE;
-/*!40000 ALTER TABLE `user_follow` DISABLE KEYS */;
-/*!40000 ALTER TABLE `user_follow` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `warning`
@@ -465,15 +359,6 @@ CREATE TABLE `warning` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `warning`
---
-
-LOCK TABLES `warning` WRITE;
-/*!40000 ALTER TABLE `warning` DISABLE KEYS */;
-/*!40000 ALTER TABLE `warning` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `warning_read`
 --
 
@@ -496,15 +381,6 @@ CREATE TABLE `warning_read` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `warning_read`
---
-
-LOCK TABLES `warning_read` WRITE;
-/*!40000 ALTER TABLE `warning_read` DISABLE KEYS */;
-/*!40000 ALTER TABLE `warning_read` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping events for database 'pest_detection_system'
 --
 
@@ -521,4 +397,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-05 15:08:43
+-- Dump completed on 2026-04-21 20:05:57
