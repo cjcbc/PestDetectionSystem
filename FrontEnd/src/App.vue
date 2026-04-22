@@ -41,7 +41,7 @@
             </template>
           </el-dropdown>
 
-          <el-button text class="notification-btn">
+          <el-button text class="notification-btn" @click="openWarningDrawer">
             <el-badge :value="unreadCount" class="notification-badge">
               <el-icon><Bell /></el-icon>
             </el-badge>
@@ -54,17 +54,34 @@
 
           <!-- 已登录状态 -->
           <template v-else>
-            <div class="user-info">
-              <div class="user-avatar">
-                <img v-if="appStore.userInfo?.image" :src="appStore.userInfo.image" :alt="currentUserName" />
-                <span v-else class="user-avatar__empty">?</span>
+            <!-- 头像下拉菜单 -->
+            <el-dropdown trigger="click" @command="handleDropdownCommand">
+              <div class="user-avatar-dropdown">
+                <div class="user-avatar">
+                  <img v-if="appStore.userInfo?.image" :src="appStore.userInfo.image" :alt="currentUserName" />
+                  <span v-else class="user-avatar__empty">?</span>
+                </div>
               </div>
-              <span class="user-tag">{{ currentUserName }}</span>
-            </div>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <div class="dropdown-user-info">
+                    <span class="dropdown-username">{{ currentUserName }}</span>
+                  </div>
+                  <el-dropdown-item command="profile">
+                    <el-icon><User /></el-icon>
+                    个人中心
+                  </el-dropdown-item>
+                  <el-dropdown-item command="logout" divided>
+                    <el-icon><SwitchButton /></el-icon>
+                    退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+
             <el-button class="mobile-menu" text @click="drawerVisible = true">
               <el-icon><Menu /></el-icon>
             </el-button>
-            <el-button plain @click="handleLogout">退出登录</el-button>
           </template>
         </div>
       </div>
@@ -98,6 +115,44 @@
       </el-button>
     </el-drawer>
 
+    <el-drawer
+      v-model="warningDrawerVisible"
+      direction="rtl"
+      size="380px"
+      class="warning-drawer"
+      title="预警通知"
+    >
+      <div v-if="warningLoading" class="warning-loading">加载中...</div>
+      <div v-else-if="warningList.length === 0" class="warning-empty">暂无已发布预警</div>
+      <div v-else class="warning-list">
+        <article
+          v-for="item in warningList"
+          :key="item.id"
+          class="warning-item"
+          :class="{ 'warning-item--read': item.isRead }"
+        >
+          <div class="warning-item__head">
+            <h4>{{ item.title }}</h4>
+            <span class="warning-item__time">{{ formatWarningTime(item.publishTime) }}</span>
+          </div>
+          <p class="warning-item__content">{{ item.content }}</p>
+          <div class="warning-item__foot">
+            <span class="warning-item__severity" :class="warningSeverityClass(item.severity)">等级 {{ warningSeverityText(item.severity) }}</span>
+            <el-button
+              v-if="!item.isRead"
+              size="small"
+              type="primary"
+              text
+              @click="markAsRead(item)"
+            >
+              标记已读
+            </el-button>
+            <span v-else class="warning-item__read">已读</span>
+          </div>
+        </article>
+      </div>
+    </el-drawer>
+
     <!-- 登录/注册弹窗 -->
     <AuthModal v-model="authModalStore.visible" @success="handleAuthSuccess" />
   </div>
@@ -106,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAppStore } from '@/stores/app'
@@ -114,6 +169,8 @@ import { useAuthModalStore } from '@/stores/auth-modal'
 import { getUserRole } from '@/utils/auth'
 import { logout as userLogout } from '@/api/user'
 import { logout as adminLogout } from '@/api/admin'
+import { getUnreadWarningCount, getWarningList, markWarningRead } from '@/api/warning'
+import type { WarningItem } from '@/types/warning'
 import AuthModal from '@/components/AuthModal.vue'
 
 const route = useRoute()
@@ -121,7 +178,11 @@ const router = useRouter()
 const appStore = useAppStore()
 const authModalStore = useAuthModalStore()
 const drawerVisible = ref(false)
-const unreadCount = ref(0) // 未读消息数，暂时为 0
+const warningDrawerVisible = ref(false)
+const warningLoading = ref(false)
+const warningList = ref<WarningItem[]>([])
+const unreadCount = ref(0)
+let warningTimer: ReturnType<typeof setInterval> | null = null
 
 const publicRouteNames = new Set(['Login', 'Register', 'NotFound'])
 
@@ -159,6 +220,21 @@ watch(
   () => {
     drawerVisible.value = false
   }
+)
+
+watch(
+  () => userIsLoggedIn.value,
+  (loggedIn) => {
+    if (loggedIn) {
+      refreshWarningSummary()
+      startWarningPolling()
+    } else {
+      unreadCount.value = 0
+      warningList.value = []
+      stopWarningPolling()
+    }
+  },
+  { immediate: true }
 )
 
 // 监听待显示消息，在页面转跳后显示
@@ -214,13 +290,114 @@ function handleLogout() {
     .catch(() => {})
 }
 
+function handleDropdownCommand(command: string) {
+  if (command === 'profile') {
+    router.push('/user')
+  } else if (command === 'logout') {
+    handleLogout()
+  }
+}
+
 function openAuthModal() {
   authModalStore.open()
 }
 
 function handleAuthSuccess() {
-  // 登录成功，store 已自动更新，UI 会自动响应，无需刷新
+  refreshWarningSummary()
 }
+
+async function refreshWarningSummary() {
+  if (!userIsLoggedIn.value) {
+    return
+  }
+
+  try {
+    const result = await getUnreadWarningCount()
+    unreadCount.value = result.unreadCount ?? 0
+  } catch (error) {
+    unreadCount.value = 0
+  }
+}
+
+async function loadWarningList() {
+  if (!userIsLoggedIn.value) {
+    return
+  }
+
+  warningLoading.value = true
+  try {
+    const result = await getWarningList({ page: 1, pageSize: 20, status: 1 })
+    warningList.value = result.list ?? []
+  } finally {
+    warningLoading.value = false
+  }
+}
+
+async function openWarningDrawer() {
+  if (!userIsLoggedIn.value) {
+    ElMessage.warning('请先登录后查看预警通知')
+    authModalStore.open()
+    return
+  }
+
+  warningDrawerVisible.value = true
+  await Promise.all([loadWarningList(), refreshWarningSummary()])
+}
+
+async function markAsRead(item: WarningItem) {
+  try {
+    await markWarningRead(item.id)
+    item.isRead = true
+    item.readTime = Date.now()
+    unreadCount.value = Math.max(unreadCount.value - 1, 0)
+  } catch (error) {
+    ElMessage.error('标记已读失败，请稍后重试')
+  }
+}
+
+function formatWarningTime(timestamp: number) {
+  if (!timestamp) {
+    return '-'
+  }
+  return new Date(timestamp).toLocaleString('zh-CN', { hour12: false })
+}
+
+function warningSeverityText(value: 1 | 2 | 3) {
+  if (value === 3) return '高'
+  if (value === 2) return '中'
+  return '低'
+}
+
+function warningSeverityClass(value: 1 | 2 | 3) {
+  if (value === 3) return 'severity-high'
+  if (value === 2) return 'severity-medium'
+  return 'severity-low'
+}
+
+function startWarningPolling() {
+  stopWarningPolling()
+  warningTimer = setInterval(() => {
+    refreshWarningSummary()
+  }, 30000)
+}
+
+function stopWarningPolling() {
+  if (warningTimer) {
+    clearInterval(warningTimer)
+    warningTimer = null
+  }
+}
+
+onMounted(() => {
+  if (userIsLoggedIn.value) {
+    refreshWarningSummary()
+    startWarningPolling()
+  }
+})
+
+onUnmounted(() => {
+  stopWarningPolling()
+})
 </script>
 
 <style scoped>
@@ -362,6 +539,16 @@ function handleAuthSuccess() {
   gap: 8px;
 }
 
+.user-avatar-dropdown {
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar-dropdown:hover {
+  transform: scale(1.05);
+}
+
 .user-avatar {
   width: 36px;
   height: 36px;
@@ -372,6 +559,7 @@ function handleAuthSuccess() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 2px solid var(--el-border-color-lighter, #e4e8ed);
 }
 
 .user-avatar img {
@@ -386,15 +574,36 @@ function handleAuthSuccess() {
   font-weight: 600;
 }
 
-.user-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: #eef8f1;
-  color: #1f7a44;
-  font-size: 14px;
+.dropdown-user-info {
+  padding: 16px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--el-border-color-lighter, #e4e8ed);
+  background: linear-gradient(180deg, rgba(46, 204, 113, 0.06) 0%, transparent 100%);
+}
+
+.dropdown-username {
+  font-size: 16px;
   font-weight: 600;
+  color: var(--color-text-primary, #303133);
+}
+
+:deep(.el-dropdown-menu__item) {
+  padding: 12px 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background: rgba(46, 204, 113, 0.1);
+  color: #1f7a44;
+}
+
+:deep(.el-dropdown-menu) {
+  padding: 8px 0;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .mobile-menu {
@@ -431,6 +640,89 @@ function handleAuthSuccess() {
 .drawer-logout {
   width: 100%;
   margin-top: 24px;
+}
+
+.warning-loading,
+.warning-empty {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 24px 8px;
+}
+
+.warning-list {
+  display: grid;
+  gap: 12px;
+}
+
+.warning-item {
+  border: 1px solid rgba(39, 174, 96, 0.18);
+  border-radius: 12px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.warning-item--read {
+  opacity: 0.82;
+}
+
+.warning-item__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.warning-item__head h4 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+}
+
+.warning-item__time {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.warning-item__content {
+  margin: 8px 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.warning-item__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.warning-item__severity {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.warning-item__severity.severity-high {
+  color: #fff;
+  background: #f56c6c;
+}
+
+.warning-item__severity.severity-medium {
+  color: #fff;
+  background: #e6a23c;
+}
+
+.warning-item__severity.severity-low {
+  color: #fff;
+  background: #f7d748;
+  color: #333;
+}
+
+.warning-item__read {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 900px) {

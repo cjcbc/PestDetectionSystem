@@ -3,6 +3,13 @@
  */
 import request from './request'
 import type { AdminUser, SystemStats, PendingContent, AlertInfo } from '@/types/admin'
+import {
+  createWarning,
+  deleteWarning,
+  getWarningList,
+  toggleWarningStatus,
+  updateWarning
+} from './warning'
 
 // ===== 用户管理相关 =====
 
@@ -80,35 +87,49 @@ export function rejectContent(contentId: string, type: 'post' | 'comment', reaso
  * 获取预警列表
  */
 export function getAlerts(): Promise<AlertInfo[]> {
-  return request.get('/admin/alerts')
+  return getWarningList({ page: 1, pageSize: 100 }).then((res) => res.list as AlertInfo[])
 }
 
 /**
  * 创建预警
  */
 export function createAlert(payload: Omit<AlertInfo, 'id' | 'createdTime' | 'updatedTime'>): Promise<AlertInfo> {
-  return request.post('/admin/alerts', payload)
+  return createWarning({
+    title: payload.title,
+    content: payload.content,
+    region: payload.region,
+    pestName: payload.pestName,
+    severity: payload.severity,
+    status: payload.status
+  }) as Promise<AlertInfo>
 }
 
 /**
  * 更新预警
  */
 export function updateAlert(alertId: string, payload: Partial<AlertInfo>): Promise<AlertInfo> {
-  return request.patch(`/admin/alerts/${alertId}`, payload)
+  return updateWarning(alertId, {
+    title: payload.title,
+    content: payload.content,
+    region: payload.region,
+    pestName: payload.pestName,
+    severity: payload.severity,
+    status: payload.status
+  }) as Promise<AlertInfo>
 }
 
 /**
  * 删除预警
  */
-export function deleteAlert(alertId: string): Promise<{ code: number; message: string }> {
-  return request.delete(`/admin/alerts/${alertId}`)
+export function deleteAlert(alertId: string): Promise<string> {
+  return deleteWarning(alertId)
 }
 
 /**
  * 切换预警状态
  */
-export function toggleAlertStatus(alertId: string): Promise<{ code: number; message: string }> {
-  return request.patch(`/admin/alerts/${alertId}/toggle`)
+export function toggleAlertStatus(alertId: string): Promise<AlertInfo> {
+  return toggleWarningStatus(alertId) as Promise<AlertInfo>
 }
 
 // ===== 认证相关 =====
