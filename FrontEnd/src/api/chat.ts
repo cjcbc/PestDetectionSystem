@@ -1,4 +1,7 @@
 import request from './request'
+import { useAppStore } from '@/stores/app'
+import { ElMessage } from 'element-plus'
+import router from '@/router'
 import type {
   ChatMessage,
   ChatQuota,
@@ -7,6 +10,8 @@ import type {
   CreateSessionPayload,
   SendMessagePayload
 } from '@/types/chat'
+
+let isStreamHandling401 = false
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888/api'
 
@@ -55,6 +60,17 @@ export async function sendMessageStream(
   })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (!isStreamHandling401) {
+        isStreamHandling401 = true
+        const appStore = useAppStore()
+        appStore.logout()
+        ElMessage.error('登录过期')
+        router.push({ name: 'Home' })
+        setTimeout(() => { isStreamHandling401 = false }, 3000)
+      }
+      return
+    }
     const text = await response.text()
     onError(`请求失败: ${response.status} ${text}`)
     return

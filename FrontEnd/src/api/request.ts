@@ -1,8 +1,10 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
-import { clearToken } from '@/utils/auth'
-import { useAuthModalStore } from '@/stores/auth-modal'
+import { useAppStore } from '@/stores/app'
+import router from '@/router'
+
+let isHandling401 = false
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888/api'
 
@@ -54,10 +56,14 @@ service.interceptors.response.use(
 
       switch (status) {
         case 401:
-          clearToken()
-          const authModalStore = useAuthModalStore()
-          authModalStore.open()
-          ElMessage.error(message || '未授权，请登录')
+          if (!isHandling401) {
+            isHandling401 = true
+            const appStore = useAppStore()
+            appStore.logout()
+            ElMessage.error('登录过期')
+            router.push({ name: 'Home' })
+            setTimeout(() => { isHandling401 = false }, 3000)
+          }
           break
         case 403:
           ElMessage.error(message || '权限不足，拒绝访问')
