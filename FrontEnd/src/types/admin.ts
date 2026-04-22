@@ -48,9 +48,15 @@ export interface AlertInfo {
   id: string
   title: string
   content: string
-  severity: 'low' | 'medium' | 'high'
-  province?: string
-  isActive: boolean
+  region?: string
+  pestName?: string
+  severity: 1 | 2 | 3
+  status: 0 | 1
+  publishTime: number
+  publisherId: string
+  publisherName: string
+  viewCount: number
+  isRead: boolean
+  readTime: number | null
   createdTime: number
-  updatedTime: number
 }
