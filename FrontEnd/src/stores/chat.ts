@@ -6,13 +6,11 @@ import {
   getMessages,
   getQuota,
   getSessions,
-  sendMessage,
   sendMessageStream
 } from '@/api/chat'
 import type {
   ChatMessage,
   ChatQuota,
-  ChatReply,
   ChatSession,
   CreateSessionPayload
 } from '@/types/chat'
@@ -36,9 +34,11 @@ export const useChatStore = defineStore('chat', () => {
   const isSessionsLoading = ref(false)
   const isMessagesLoading = ref(false)
   const isSending = ref(false)
-  /** 流式输出中的中间状态 */
+  /** 流式输出中的中间状态 — 不触发 messages 响应式更新 */
   const streamingContent = ref('')
   const isStreaming = ref(false)
+  /** 流式期间用户消息的临时 ID */
+  const streamingUserMsgId = ref<string | null>(null)
 
   const currentSession = computed(() =>
     sessions.value.find((session) => session.id === currentSessionId.value) ?? null
@@ -82,27 +82,20 @@ export const useChatStore = defineStore('chat', () => {
       return
     }
 
-    // 添加临时用户消息
-    const tempUserMessage: ChatMessage = {
+    // 添加用户消息（一次性修改数组）
+    const tempUserMessage: Partial<ChatMessage> & { id: string; role: 'user'; content: string; createdTime: number } = {
       id: `temp-user-${Date.now()}`,
       role: 'user',
       content,
       createdTime: Date.now()
     }
-    messages.value = [...messages.value, tempUserMessage]
+    messages.value = [...messages.value, tempUserMessage as ChatMessage]
 
-    // 添加临时 AI 消息占位（流式内容会实时写入）
-    const tempAiMessage: ChatMessage = {
-      id: `temp-ai-${Date.now()}`,
-      role: 'assistant',
-      content: '',
-      createdTime: Date.now()
-    }
-    messages.value = [...messages.value, tempAiMessage]
-
+    // 记录流式消息 ID & 清空流式缓冲
+    streamingUserMsgId.value = tempUserMessage.id
+    streamingContent.value = ''
     isSending.value = true
     isStreaming.value = true
-    streamingContent.value = ''
 
     try {
       await sendMessageStream(
@@ -111,23 +104,15 @@ export const useChatStore = defineStore('chat', () => {
           message: content,
           detectionId
         },
-        // onDelta: 增量文本
+        // onDelta: 仅更新 streamingContent，不修改 messages
         (delta: string) => {
           streamingContent.value += delta
-          // 实时更新临时 AI 消息内容
-          const idx = messages.value.findIndex((m) => m.id === tempAiMessage.id)
-          if (idx !== -1) {
-            messages.value[idx] = {
-              ...messages.value[idx],
-              content: streamingContent.value
-            }
-          }
         },
-        // onDone: 流结束
+        // onDone: 流结束 — 用真实数据替换临时消息
         async () => {
           isStreaming.value = false
           isSending.value = false
-          // 重新加载真实消息（含数据库 ID）
+          streamingUserMsgId.value = null
           await Promise.all([
             loadMessages(currentSessionId.value!),
             fetchSessions(),
@@ -138,9 +123,10 @@ export const useChatStore = defineStore('chat', () => {
         (err: string) => {
           isStreaming.value = false
           isSending.value = false
-          // 移除临时消息
+          streamingUserMsgId.value = null
+          // 移除临时用户消息
           messages.value = messages.value.filter(
-            (m) => m.id !== tempUserMessage.id && m.id !== tempAiMessage.id
+            (m) => m.id !== tempUserMessage.id
           )
           throw new Error(err)
         }
@@ -148,8 +134,9 @@ export const useChatStore = defineStore('chat', () => {
     } catch {
       isStreaming.value = false
       isSending.value = false
+      streamingUserMsgId.value = null
       messages.value = messages.value.filter(
-        (m) => m.id !== tempUserMessage.id && m.id !== tempAiMessage.id
+        (m) => m.id !== tempUserMessage.id
       )
       throw new Error('发送消息失败')
     }
@@ -180,6 +167,7 @@ export const useChatStore = defineStore('chat', () => {
     isSending,
     isStreaming,
     streamingContent,
+    streamingUserMsgId,
     currentSession,
     fetchSessions,
     fetchQuota,

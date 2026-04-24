@@ -3,7 +3,7 @@
     <!-- 未登录状态提示 -->
     <div v-if="!userIsLoggedIn" class="auth-required-overlay">
       <el-empty description="AI 对话功能需要登录">
-        <el-button type="primary" @click="openAuthModal">立即登录</el-button>
+        <el-button type="primary" @click="goToLogin">立即登录</el-button>
       </el-empty>
     </div>
 
@@ -130,14 +130,12 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { isLoggedIn } from '@/utils/auth'
-import { useAuthModalStore } from '@/stores/auth-modal'
 import { useChatStore } from '@/stores/chat'
 import { formatSessionTime } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()
 const chatStore = useChatStore()
-const authModalStore = useAuthModalStore()
 
 const userIsLoggedIn = computed(() => isLoggedIn())
 
@@ -203,7 +201,7 @@ async function handleCreateSession() {
   // 检查是否登录
   if (!userIsLoggedIn.value) {
     ElMessage.warning('对话功能需要登录')
-    authModalStore.open()
+    router.push({ name: 'Login' })
     return
   }
 
@@ -254,7 +252,7 @@ async function handleDeleteSession(sessionId: string) {
   // 检查是否登录
   if (!userIsLoggedIn.value) {
     ElMessage.warning('对话功能需要登录')
-    authModalStore.open()
+    router.push({ name: 'Login' })
     return
   }
 
@@ -266,8 +264,8 @@ async function handleDeleteSession(sessionId: string) {
   }
 }
 
-function openAuthModal() {
-  authModalStore.open()
+function goToLogin() {
+  router.push({ name: 'Login' })
 }
 
 onMounted(async () => {

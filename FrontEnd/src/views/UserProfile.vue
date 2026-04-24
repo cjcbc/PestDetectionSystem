@@ -18,7 +18,12 @@
                 class="avatar"
               />
               <div v-else class="avatar-placeholder">
-                <el-icon :size="48"><UserFilled /></el-icon>
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="60" cy="60" r="60" fill="url(#default-avatar-profile)"/>
+                  <circle cx="60" cy="44" r="18" fill="#fff" opacity="0.9"/>
+                  <ellipse cx="60" cy="92" rx="30" ry="20" fill="#fff" opacity="0.9"/>
+                  <defs><linearGradient id="default-avatar-profile" x1="0" y1="0" x2="120" y2="120"><stop stop-color="#67c23a"/><stop offset="1" stop-color="#409eff"/></linearGradient></defs>
+                </svg>
               </div>
               <div v-if="isEditMode" class="upload-overlay">
                 <label for="avatar-input" class="upload-btn">
@@ -349,7 +354,6 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   User,
-  UserFilled,
   Male,
   Female,
   QuestionFilled,
@@ -683,12 +687,14 @@ function handlePasswordChangeSuccess() {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--el-color-primary-light-8) 0%, var(--el-color-primary-light-9) 100%);
-  border: 4px solid var(--el-color-primary-light-5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--el-color-primary);
+  border: 4px solid var(--el-border-color-lighter, #e4e8ed);
+  overflow: hidden;
+}
+
+.avatar-placeholder svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .upload-overlay {

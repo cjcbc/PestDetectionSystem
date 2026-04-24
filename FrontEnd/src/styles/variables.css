@@ -1,10 +1,13 @@
-/* CSS 变量定义 - 色彩系统 */
+/* CSS 变量定义 — 色彩系统 & 设计令牌 */
 
 :root {
-  /* 主要颜色 */
-  --color-primary: #2ecc71;
-  --color-primary-dark: #27ae60;
-  --color-primary-light: #d5f4e6;
+  /* 品牌色 — 森林绿色系 */
+  --color-primary: #1a7a3a;
+  --color-primary-dark: #14532d;
+  --color-primary-deeper: #0d3b1e;
+  --color-primary-light: #4ade80;
+  --color-primary-lighter: #bbf7d0;
+  --color-primary-surface: #f0fdf4;
 
   /* 中性色 */
   --color-white: #ffffff;
@@ -21,37 +24,45 @@
   --color-gray-900: #111827;
 
   /* 功能色 */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
 
   /* 背景颜色 */
   --color-bg: var(--color-white);
   --color-bg-secondary: var(--color-gray-50);
   --color-bg-tertiary: var(--color-gray-100);
+  --color-bg-brand: var(--color-primary-surface);
 
   /* 文本颜色 */
   --color-text-primary: var(--color-gray-900);
   --color-text-secondary: var(--color-gray-600);
   --color-text-tertiary: var(--color-gray-400);
   --color-text-inverse: var(--color-white);
+  --color-text-brand: var(--color-primary-dark);
 
   /* 边框颜色 */
   --color-border: var(--color-gray-200);
   --color-border-light: var(--color-gray-100);
+  --color-border-brand: rgba(26, 122, 58, 0.2);
 
   /* 阴影 */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.12);
+  --shadow-brand: 0 8px 24px rgba(26, 122, 58, 0.15);
+  --shadow-brand-lg: 0 16px 40px rgba(26, 122, 58, 0.2);
 
   /* 圆角 */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
 
   /* 间距 */
   --spacing-xs: 4px;
@@ -61,6 +72,11 @@
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
 
+  /* 字体 */
+  --font-display: 'Noto Serif SC', 'Playfair Display', Georgia, 'Noto Sans SC', serif;
+  --font-body: 'Noto Sans SC', 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
   /* 字体大小 */
   --font-size-xs: 12px;
   --font-size-sm: 14px;
@@ -69,6 +85,8 @@
   --font-size-xl: 20px;
   --font-size-2xl: 24px;
   --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
 
   /* 行高 */
   --line-height-tight: 1.25;
@@ -80,8 +98,9 @@
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-black: 900;
 
-  /* 过渡时间 */
+  /* 过渡 */
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 300ms ease-in-out;
   --transition-slow: 500ms ease-in-out;
@@ -91,17 +110,15 @@
   --z-sticky: 1100;
   --z-modal: 1300;
   --z-notification: 1400;
-}
 
-/* 暗黑模式 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: var(--color-gray-900);
-    --color-bg-secondary: var(--color-gray-800);
-    --color-bg-tertiary: var(--color-gray-700);
-
-    --color-text-primary: var(--color-white);
-    --color-text-secondary: var(--color-gray-300);
-    --color-text-tertiary: var(--color-gray-400);
-  }
+  /* Element Plus 主题覆盖 */
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: #3d9957;
+  --el-color-primary-light-5: #7bbf8b;
+  --el-color-primary-light-7: #b5dbbe;
+  --el-color-primary-light-8: #d1ebd7;
+  --el-color-primary-light-9: #edf7ef;
+  --el-color-primary-dark-2: var(--color-primary-dark);
+  --el-border-radius-base: var(--radius-md);
+  --el-font-family: var(--font-body);
 }

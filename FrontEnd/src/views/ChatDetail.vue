@@ -3,7 +3,7 @@
     <!-- 未登录状态提示 -->
     <div v-if="!userIsLoggedIn" class="auth-required-overlay">
       <el-empty description="AI 对话功能需要登录">
-        <el-button type="primary" @click="openAuthModal">立即登录</el-button>
+        <el-button type="primary" @click="goToLogin">立即登录</el-button>
       </el-empty>
     </div>
 
@@ -68,18 +68,44 @@
                 <div class="chatgpt-msg__content">
                   <MarkdownRenderer
                     :content="message.content"
-                    :is-streaming="chatStore.isStreaming && message.id.startsWith('temp-ai-')"
+                    :is-streaming="false"
                   />
-                  <span v-if="chatStore.isStreaming && message.id.startsWith('temp-ai-') && !message.content" class="chatgpt-thinking-inline">
-                    <span class="chatgpt-thinking__dot"></span>
-                    <span class="chatgpt-thinking__dot"></span>
-                    <span class="chatgpt-thinking__dot"></span>
-                  </span>
                 </div>
               </div>
               <p v-if="!message.id.startsWith('temp-')" class="chatgpt-msg__time">{{ formatMessageTime(message.createdTime) }}</p>
             </div>
           </template>
+
+          <!-- 流式 AI 消息（独立渲染，不走 messages 数组） -->
+          <div v-if="chatStore.isStreaming && chatStore.streamingContent" class="chatgpt-msg chatgpt-msg--assistant">
+            <div class="chatgpt-msg__row">
+              <div class="chatgpt-msg__avatar chatgpt-msg__avatar--ai">
+                <span>AI</span>
+              </div>
+              <div class="chatgpt-msg__content">
+                <MarkdownRenderer
+                  :content="chatStore.streamingContent"
+                  :is-streaming="true"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 思考中占位（流式开始但尚无内容） -->
+          <div v-else-if="chatStore.isStreaming && !chatStore.streamingContent" class="chatgpt-msg chatgpt-msg--assistant">
+            <div class="chatgpt-msg__row">
+              <div class="chatgpt-msg__avatar chatgpt-msg__avatar--ai">
+                <span>AI</span>
+              </div>
+              <div class="chatgpt-msg__content">
+                <span class="chatgpt-thinking-inline">
+                  <span class="chatgpt-thinking__dot"></span>
+                  <span class="chatgpt-thinking__dot"></span>
+                  <span class="chatgpt-thinking__dot"></span>
+                </span>
+              </div>
+            </div>
+          </div>
 
           <!-- 底部锚点 -->
           <div ref="messagesEnd"></div>
@@ -123,7 +149,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Delete, User, Promotion } from '@element-plus/icons-vue'
 import { isLoggedIn } from '@/utils/auth'
-import { useAuthModalStore } from '@/stores/auth-modal'
 import { useChatStore } from '@/stores/chat'
 import { formatMessageTime } from '@/utils/format'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -131,7 +156,6 @@ import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 const route = useRoute()
 const router = useRouter()
 const chatStore = useChatStore()
-const authModalStore = useAuthModalStore()
 
 const userIsLoggedIn = computed(() => isLoggedIn())
 
@@ -241,17 +265,53 @@ watch(
   }
 )
 
-watch(
-  () => [chatStore.messages.length, chatStore.isSending, chatStore.streamingContent],
-  async () => {
-    await nextTick()
+// Throttled scroll-to-bottom during streaming
+let scrollTimer: ReturnType<typeof setTimeout> | 0 = 0
+let lastScrollTime = 0
+const SCROLL_THROTTLE_MS = 200
+
+function throttledScrollToBottom() {
+  const now = Date.now()
+  const remaining = SCROLL_THROTTLE_MS - (now - lastScrollTime)
+  if (remaining <= 0) {
+    lastScrollTime = now
     scrollToBottom(true)
-  },
-  { deep: false }
+    return
+  }
+  if (!scrollTimer) {
+    scrollTimer = window.setTimeout(() => {
+      scrollTimer = 0
+      lastScrollTime = Date.now()
+      scrollToBottom(true)
+    }, remaining)
+  }
+}
+
+watch(
+  () => chatStore.streamingContent,
+  () => {
+    throttledScrollToBottom()
+  }
 )
 
-function openAuthModal() {
-  authModalStore.open()
+watch(
+  () => chatStore.messages.length,
+  () => {
+    scrollToBottom()
+  }
+)
+
+watch(
+  () => chatStore.isSending,
+  (val) => {
+    if (!val) {
+      nextTick(() => scrollToBottom(true))
+    }
+  }
+)
+
+function goToLogin() {
+  router.push({ name: 'Login' })
 }
 
 onMounted(() => {
@@ -403,6 +463,7 @@ onMounted(() => {
 /* ===== 消息气泡 ===== */
 .chatgpt-msg {
   margin-bottom: 24px;
+  contain: layout style;
 }
 
 .chatgpt-msg__row {
@@ -443,6 +504,7 @@ onMounted(() => {
   line-height: 1.7;
   font-size: 15px;
   color: #1a1a1a;
+  contain: layout style;
 }
 
 /* 用户消息样式 */

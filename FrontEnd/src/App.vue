@@ -3,7 +3,14 @@
     <header class="topbar">
       <div class="topbar__inner">
         <router-link to="/" class="brand">
-          <span class="brand__badge">PDS</span>
+          <span class="brand__badge">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+              <path d="M20 4C14 4 8 8 8 16c0 8 8 16 12 20 4-4 12-12 12-20C32 8 26 4 20 4z" fill="rgba(255,255,255,0.25)"/>
+              <path d="M20 10c-2 0-6 2-6 7 0 4 4 9 6 11 2-2 6-7 6-11 0-5-4-7-6-7z" fill="#fff"/>
+              <path d="M17 18c2-3 5-4 7-3" stroke="rgba(26,122,58,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="26" cy="14" r="2" fill="rgba(255,255,255,0.7)"/>
+            </svg>
+          </span>
           <div class="brand__text">
             <strong>病虫害识别系统</strong>
             <span>顶部导航栏目入口</span>
@@ -48,9 +55,9 @@
           </el-button>
 
           <!-- 未登录状态 -->
-          <el-button v-if="!userIsLoggedIn" type="primary" @click="openAuthModal">
-            登 录
-          </el-button>
+          <router-link v-if="!userIsLoggedIn" :to="{ name: 'Login' }" class="login-link">
+            登录 / 注册
+          </router-link>
 
           <!-- 已登录状态 -->
           <template v-else>
@@ -59,7 +66,14 @@
               <div class="user-avatar-dropdown">
                 <div class="user-avatar">
                   <img v-if="appStore.userInfo?.image" :src="appStore.userInfo.image" :alt="currentUserName" />
-                  <span v-else class="user-avatar__empty">?</span>
+                  <span v-else class="user-avatar__empty">
+                    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="40" cy="40" r="40" fill="url(#default-avatar-header)"/>
+                      <circle cx="40" cy="30" r="12" fill="#fff" opacity="0.9"/>
+                      <ellipse cx="40" cy="62" rx="20" ry="14" fill="#fff" opacity="0.9"/>
+                      <defs><linearGradient id="default-avatar-header" x1="0" y1="0" x2="80" y2="80"><stop stop-color="#67c23a"/><stop offset="1" stop-color="#409eff"/></linearGradient></defs>
+                    </svg>
+                  </span>
                 </div>
               </div>
               <template #dropdown>
@@ -152,9 +166,6 @@
         </article>
       </div>
     </el-drawer>
-
-    <!-- 登录/注册弹窗 -->
-    <AuthModal v-model="authModalStore.visible" @success="handleAuthSuccess" />
   </div>
 
   <router-view v-else />
@@ -165,18 +176,15 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAppStore } from '@/stores/app'
-import { useAuthModalStore } from '@/stores/auth-modal'
 import { getUserRole } from '@/utils/auth'
 import { logout as userLogout } from '@/api/user'
 import { logout as adminLogout } from '@/api/admin'
 import { getUnreadWarningCount, getWarningList, markWarningRead } from '@/api/warning'
 import type { WarningItem } from '@/types/warning'
-import AuthModal from '@/components/AuthModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
-const authModalStore = useAuthModalStore()
 const drawerVisible = ref(false)
 const warningDrawerVisible = ref(false)
 const warningLoading = ref(false)
@@ -298,14 +306,6 @@ function handleDropdownCommand(command: string) {
   }
 }
 
-function openAuthModal() {
-  authModalStore.open()
-}
-
-function handleAuthSuccess() {
-  refreshWarningSummary()
-}
-
 async function refreshWarningSummary() {
   if (!userIsLoggedIn.value) {
     return
@@ -336,7 +336,7 @@ async function loadWarningList() {
 async function openWarningDrawer() {
   if (!userIsLoggedIn.value) {
     ElMessage.warning('请先登录后查看预警通知')
-    authModalStore.open()
+    router.push({ name: 'Login' })
     return
   }
 
@@ -404,8 +404,8 @@ onUnmounted(() => {
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(46, 204, 113, 0.18), transparent 32%),
-    linear-gradient(180deg, #f3fbf6 0%, #f7f8f3 48%, #fcfcfa 100%);
+    radial-gradient(circle at top left, rgba(26, 122, 58, 0.14), transparent 32%),
+    linear-gradient(180deg, #f0fdf4 0%, #f4f6f1 48%, #fafaf8 100%);
 }
 
 .topbar {
@@ -413,9 +413,9 @@ onUnmounted(() => {
   top: 0;
   z-index: var(--z-sticky);
   backdrop-filter: blur(14px);
-  background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid rgba(39, 174, 96, 0.12);
-  box-shadow: 0 10px 30px rgba(31, 41, 55, 0.05);
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--color-border-brand);
+  box-shadow: var(--shadow-sm);
 }
 
 .topbar__inner {
@@ -446,12 +446,13 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #1f7a44 0%, #39b56b 100%);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  font-family: var(--font-display);
 }
 
 .brand__text {
@@ -463,6 +464,7 @@ onUnmounted(() => {
 .brand__text strong {
   font-size: 18px;
   color: var(--color-text-primary);
+  font-family: var(--font-display);
 }
 
 .brand__text span {
@@ -489,16 +491,16 @@ onUnmounted(() => {
 }
 
 .nav-link:hover {
-  color: #1f7a44;
+  color: var(--color-primary);
   text-decoration: none;
-  background: rgba(46, 204, 113, 0.1);
+  background: var(--color-bg-brand);
   transform: translateY(-1px);
 }
 
 .nav-link--active {
-  color: #14532d;
-  background: rgba(46, 204, 113, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(39, 174, 96, 0.12);
+  color: var(--color-primary-dark);
+  background: var(--color-bg-brand);
+  box-shadow: inset 0 0 0 1px var(--color-border-brand);
 }
 
 .topbar__actions {
@@ -523,8 +525,29 @@ onUnmounted(() => {
   transition: color var(--transition-fast);
 }
 
+.login-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.login-link:hover {
+  background: var(--color-primary-dark);
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
 .notification-btn:hover {
-  color: #1f7a44;
+  color: var(--color-primary);
 }
 
 .notification-badge {
@@ -569,16 +592,23 @@ onUnmounted(() => {
 }
 
 .user-avatar__empty {
-  font-size: 18px;
-  color: #999;
-  font-weight: 600;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar__empty svg {
+  width: 100%;
+  height: 100%;
 }
 
 .dropdown-user-info {
   padding: 16px 20px;
   text-align: center;
   border-bottom: 1px solid var(--el-border-color-lighter, #e4e8ed);
-  background: linear-gradient(180deg, rgba(46, 204, 113, 0.06) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--color-bg-brand) 0%, transparent 100%);
 }
 
 .dropdown-username {
@@ -596,8 +626,8 @@ onUnmounted(() => {
 }
 
 :deep(.el-dropdown-menu__item:hover) {
-  background: rgba(46, 204, 113, 0.1);
-  color: #1f7a44;
+  background: var(--color-bg-brand);
+  color: var(--color-primary);
 }
 
 :deep(.el-dropdown-menu) {
@@ -634,7 +664,7 @@ onUnmounted(() => {
 
 .drawer-link:hover {
   text-decoration: none;
-  background: #e7f7ed;
+  background: var(--color-bg-brand);
 }
 
 .drawer-logout {
@@ -655,8 +685,8 @@ onUnmounted(() => {
 }
 
 .warning-item {
-  border: 1px solid rgba(39, 174, 96, 0.18);
-  border-radius: 12px;
+  border: 1px solid var(--color-border-brand);
+  border-radius: var(--radius-md);
   padding: 12px;
   background: #ffffff;
 }
@@ -706,18 +736,17 @@ onUnmounted(() => {
 
 .warning-item__severity.severity-high {
   color: #fff;
-  background: #f56c6c;
+  background: var(--color-error);
 }
 
 .warning-item__severity.severity-medium {
   color: #fff;
-  background: #e6a23c;
+  background: var(--color-warning);
 }
 
 .warning-item__severity.severity-low {
-  color: #fff;
-  background: #f7d748;
   color: #333;
+  background: #fbbf24;
 }
 
 .warning-item__read {

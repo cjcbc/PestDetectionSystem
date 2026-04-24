@@ -1,157 +1,189 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <div class="login-header">
-        <h2 class="login-title">系统登录</h2>
-        <p class="login-subtitle">欢迎使用病虫害检测系统</p>
+  <div class="login-shell">
+    <!-- 左侧品牌沉浸区 -->
+    <aside class="login-hero">
+      <div class="login-hero__overlay"></div>
+      <div class="login-hero__content">
+        <span class="login-hero__badge">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <path d="M24 4C16 4 8 10 8 20c0 10 10 18 16 24 6-6 16-14 16-24C40 10 32 4 24 4z" fill="rgba(255,255,255,0.2)"/>
+              <path d="M24 12c-3 0-8 3-8 9 0 5 5 11 8 14 3-3 8-9 8-14 0-6-5-9-8-9z" fill="#fff"/>
+              <path d="M19 22c3-4 7-5 10-3" stroke="rgba(16,163,127,0.7)" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="33" cy="17" r="2.5" fill="rgba(255,255,255,0.7)"/>
+            </svg>
+          </span>
+        <h1 class="login-hero__title">智慧农业<br/>守护每一片田</h1>
+        <p class="login-hero__desc">基于深度学习的病虫害智能识别，结合 AI 问答与社区交流，为农业生产提供全方位技术支撑。</p>
+        <div class="login-hero__features">
+          <div class="login-hero__feature">
+            <div class="feature-dot"></div>
+            <span>病虫害图像识别</span>
+          </div>
+          <div class="login-hero__feature">
+            <div class="feature-dot"></div>
+            <span>AI 专家在线问答</span>
+          </div>
+          <div class="login-hero__feature">
+            <div class="feature-dot"></div>
+            <span>农业社区经验分享</span>
+          </div>
+        </div>
       </div>
+    </aside>
 
-      <el-tabs v-model="activeTab" class="login-tabs">
-        <el-tab-pane label="密码登录" name="login">
-          <el-form
-            ref="loginFormRef"
-            :model="loginForm"
-            :rules="loginRules"
-            size="large"
-            class="login-form"
-          >
-            <el-form-item prop="account">
-              <el-input
-                v-model="loginForm.account"
-                placeholder="请输入邮箱或手机号"
-                :prefix-icon="User"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input
-                v-model="loginForm.password"
-                type="password"
-                placeholder="请输入密码"
-                :prefix-icon="Lock"
-                show-password
-                @keyup.enter="handleLogin"
-              />
-            </el-form-item>
-            <div class="form-options">
-              <el-checkbox v-model="loginForm.remember">记住密码</el-checkbox>
-              <el-link type="primary" :underline="false">忘记密码？</el-link>
-            </div>
-            <el-form-item>
+    <!-- 右侧表单区 -->
+    <main class="login-form-area">
+      <div class="login-form-wrap">
+        <div class="login-form-header">
+          <h2 class="login-form-title">{{ activeTab === 'login' ? '欢迎回来' : '创建账号' }}</h2>
+          <p class="login-form-sub">{{ activeTab === 'login' ? '登录以获取完整功能体验' : '注册后即可使用全部功能' }}</p>
+        </div>
+
+        <el-tabs v-model="activeTab" class="login-tabs">
+          <!-- 登录 -->
+          <el-tab-pane label="登 录" name="login">
+            <el-form
+              ref="loginFormRef"
+              :model="loginForm"
+              :rules="loginRules"
+              label-position="top"
+              @keyup.enter="handleLogin"
+            >
+              <el-form-item label="邮箱或手机号" prop="account">
+                <el-input
+                  v-model="loginForm.account"
+                  placeholder="请输入邮箱或手机号"
+                  clearable
+                  size="large"
+                  @keyup.enter="handleLogin"
+                />
+              </el-form-item>
+
+              <el-form-item label="密码" prop="password">
+                <el-input
+                  v-model="loginForm.password"
+                  type="password"
+                  placeholder="请输入密码"
+                  show-password
+                  clearable
+                  size="large"
+                  @keyup.enter="handleLogin"
+                />
+              </el-form-item>
+
               <el-button
                 type="primary"
-                class="submit-btn"
-                :loading="loading"
+                class="login-submit"
+                :loading="loginLoading"
                 @click="handleLogin"
               >
-                登录
+                登 录
               </el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
+            </el-form>
+          </el-tab-pane>
 
-        <el-tab-pane label="账号注册" name="register">
-          <el-form
-            ref="registerFormRef"
-            :model="registerForm"
-            :rules="registerRules"
-            size="large"
-            class="login-form"
-          >
-            <el-form-item prop="username">
-              <el-input
-                v-model="registerForm.username"
-                placeholder="请输入用户名"
-                :prefix-icon="User"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item prop="email">
-              <el-input
-                v-model="registerForm.email"
-                placeholder="请输入邮箱（可选）"
-                type="email"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item prop="phone">
-              <el-input
-                v-model="registerForm.phone"
-                placeholder="请输入手机号（可选）"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input
-                v-model="registerForm.password"
-                type="password"
-                placeholder="请输入密码"
-                :prefix-icon="Lock"
-                show-password
-              />
-            </el-form-item>
-            <el-form-item prop="confirmPassword">
-              <el-input
-                v-model="registerForm.confirmPassword"
-                type="password"
-                placeholder="请再次确认密码"
-                :prefix-icon="Lock"
-                show-password
-                @keyup.enter="handleRegister"
-              />
-            </el-form-item>
-            <el-form-item>
+          <!-- 注册 -->
+          <el-tab-pane label="注 册" name="register">
+            <el-form
+              ref="registerFormRef"
+              :model="registerForm"
+              :rules="registerRules"
+              label-position="top"
+              @keyup.enter="handleRegister"
+            >
+              <el-form-item label="用户名（可选）" prop="username">
+                <el-input
+                  v-model="registerForm.username"
+                  placeholder="3-20个字符"
+                  maxlength="20"
+                  clearable
+                  size="large"
+                />
+              </el-form-item>
+
+              <el-form-item label="邮箱" prop="email">
+                <el-input
+                  v-model="registerForm.email"
+                  placeholder="请输入邮箱"
+                  clearable
+                  size="large"
+                />
+              </el-form-item>
+
+              <el-form-item label="手机号（可选）" prop="phone">
+                <el-input
+                  v-model="registerForm.phone"
+                  placeholder="11位手机号"
+                  maxlength="11"
+                  clearable
+                  size="large"
+                />
+              </el-form-item>
+
+              <el-form-item label="密码" prop="password">
+                <el-input
+                  v-model="registerForm.password"
+                  type="password"
+                  placeholder="请输入密码（至少6位）"
+                  show-password
+                  clearable
+                  size="large"
+                />
+              </el-form-item>
+
+              <el-form-item label="确认密码" prop="confirmPassword">
+                <el-input
+                  v-model="registerForm.confirmPassword"
+                  type="password"
+                  placeholder="请再次输入密码"
+                  show-password
+                  clearable
+                  size="large"
+                  @keyup.enter="handleRegister"
+                />
+              </el-form-item>
+
               <el-button
                 type="primary"
-                class="submit-btn"
-                :loading="loading"
+                class="login-submit"
+                :loading="registerLoading"
                 @click="handleRegister"
               >
-                注册
+                注 册
               </el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-      </el-tabs>
-    </div>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Lock } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
-import { useAppStore } from '@/stores/app'
+import { ElMessage, ElForm } from 'element-plus'
 import { login, register } from '@/api/user'
+import { useAppStore } from '@/stores/app'
+import { isValidEmail, isValidPhone, isValidUsername } from '@/utils/validators'
+import type { LoginPayload, RegisterPayload } from '@/types/user'
 
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
-const activeTab = ref('login')
-const loading = ref(false)
 
-// 登录表单
-const loginFormRef = ref<FormInstance>()
+const activeTab = ref<'login' | 'register'>('login')
+const loginLoading = ref(false)
+const registerLoading = ref(false)
+
+const loginFormRef = ref<InstanceType<typeof ElForm>>()
+const registerFormRef = ref<InstanceType<typeof ElForm>>()
+
 const loginForm = reactive({
   account: '',
-  password: '',
-  remember: false
+  password: ''
 })
 
-const loginRules = reactive<FormRules>({
-  account: [
-    { required: true, message: '请输入邮箱或手机号', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
-  ]
-})
-
-// 注册表单
-const registerFormRef = ref<FormInstance>()
 const registerForm = reactive({
   username: '',
   email: '',
@@ -160,223 +192,357 @@ const registerForm = reactive({
   confirmPassword: ''
 })
 
-const validatePassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
-  if (!value) {
-    callback(new Error('请输入密码'))
-  } else if (value.length < 6) {
-    callback(new Error('密码长度不能少于6位'))
-  } else {
-    callback()
-  }
-}
-
-const validateConfirmPassword = (
-  _rule: unknown,
-  value: string,
-  callback: (error?: Error) => void
-) => {
-  if (value === '') {
-    callback(new Error('请再次确认密码'))
-  } else if (value !== registerForm.password) {
-    callback(new Error('两次输入密码不一致!'))
-  } else {
-    callback()
-  }
-}
-
-const registerRules = reactive<FormRules>({
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
-  ],
-  email: [
-    { required: false, trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
-  ],
-  phone: [
-    { required: false, trigger: 'blur' }
+const loginRules = {
+  account: [
+    { required: true, message: '邮箱或手机号不能为空', trigger: 'blur' }
   ],
   password: [
-    { validator: validatePassword, trigger: 'blur' }
+    { required: true, message: '密码不能为空', trigger: 'blur' },
+    { min: 6, message: '密码至少6个字符', trigger: 'blur' }
+  ]
+}
+
+const registerRules = {
+  username: [
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (!value) { callback(); return }
+        if (!isValidUsername(value)) {
+          callback(new Error('用户名格式不正确（3-20个字符，仅支持字母、数字、下划线）'))
+        } else { callback() }
+      },
+      trigger: 'blur'
+    }
+  ],
+  email: [
+    { required: true, message: '邮箱不能为空', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (value && !isValidEmail(value)) {
+          callback(new Error('邮箱格式不正确'))
+        } else { callback() }
+      },
+      trigger: 'blur'
+    }
+  ],
+  phone: [
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (!value) { callback(); return }
+        if (!isValidPhone(value)) {
+          callback(new Error('手机号格式不正确'))
+        } else { callback() }
+      },
+      trigger: 'blur'
+    }
+  ],
+  password: [
+    { required: true, message: '密码不能为空', trigger: 'blur' },
+    { min: 6, message: '密码至少6个字符', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (value !== registerForm.password) {
+          callback(new Error('两次输入密码不一致'))
+        } else { callback() }
+      },
+      trigger: 'blur'
+    }
   ]
-})
+}
 
-const handleLogin = async () => {
+async function handleLogin() {
   if (!loginFormRef.value) return
-
-  const valid = await loginFormRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  loading.value = true
   try {
-    const response = await login({
+    await loginFormRef.value.validate()
+  } catch { return }
+
+  loginLoading.value = true
+  try {
+    const payload: LoginPayload = {
       account: loginForm.account,
       password: loginForm.password
-    })
-
-    // 保存用户信息和token到store
+    }
+    const response = await login(payload)
     appStore.setUser(response, response.token)
-
-    // 存储待显示消息，转跳后会自动显示
     appStore.setPendingMessage('success', '登录成功')
-
-    // 立即跳转
     const redirect = route.query.redirect as string
     if (redirect && redirect.startsWith('/')) {
       await router.push(redirect)
     } else {
       await router.push('/')
     }
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : '未知错误'
-    ElMessage.error(`登录失败: ${errorMsg}`)
+  } catch (error: any) {
+    const msg = error?.response?.data?.message || error?.message || '登录失败，请检查输入'
+    ElMessage.error(msg)
   } finally {
-    loading.value = false
+    loginLoading.value = false
   }
 }
 
-const handleRegister = async () => {
+async function handleRegister() {
   if (!registerFormRef.value) return
-
-  const valid = await registerFormRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  loading.value = true
   try {
-    await register({
-      username: registerForm.username,
+    await registerFormRef.value.validate()
+  } catch { return }
+
+  registerLoading.value = true
+  try {
+    const payload: RegisterPayload = {
+      username: registerForm.username || undefined,
       password: registerForm.password,
       email: registerForm.email,
-      phone: registerForm.phone
-    })
-
-    // 存储待显示消息
-    appStore.setPendingMessage('success', '注册成功，请登录')
-
-    // 立即切换
+      phone: registerForm.phone || undefined
+    }
+    await register(payload)
+    ElMessage.success('注册成功，请登录')
     activeTab.value = 'login'
-    loginForm.account = registerForm.email || registerForm.phone || ''
-    registerFormRef.value?.resetFields()
-  } catch (error) {
-    console.error('注册失败:', error)
+    loginForm.account = registerForm.email
+    resetRegisterForm()
+  } catch (error: any) {
+    const msg = error?.response?.data?.message || error?.message || '注册失败，请重试'
+    ElMessage.error(msg)
   } finally {
-    loading.value = false
+    registerLoading.value = false
   }
 }
+
+function resetRegisterForm() {
+  registerForm.username = ''
+  registerForm.email = ''
+  registerForm.phone = ''
+  registerForm.password = ''
+  registerForm.confirmPassword = ''
+  registerFormRef.value?.clearValidate()
+}
+
+watch(activeTab, () => {
+  resetRegisterForm()
+  loginForm.account = ''
+  loginForm.password = ''
+  loginFormRef.value?.clearValidate()
+})
 </script>
 
 <style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.login-shell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  background-color: #f5f7fa;
-  background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
 }
 
-.login-box {
+/* ====== 左侧品牌区 ====== */
+.login-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(135deg, #0d3b1e 0%, #14532d 40%, #1a7a3a 80%, #4ade80 100%);
+  overflow: hidden;
+}
+
+.login-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(74, 222, 128, 0.2), transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, 0.08), transparent 40%);
+  pointer-events: none;
+}
+
+.login-hero__content {
+  position: relative;
+  z-index: 1;
+  padding: 60px 48px;
+  color: #fff;
+  max-width: 480px;
+}
+
+.login-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin-bottom: 32px;
+}
+
+.login-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+.login-hero__desc {
+  font-size: 16px;
+  line-height: 1.7;
+  opacity: 0.85;
+  margin-bottom: 40px;
+  max-width: 400px;
+}
+
+.login-hero__features {
+  display: grid;
+  gap: 16px;
+}
+
+.login-hero__feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.feature-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.5);
+  flex-shrink: 0;
+}
+
+/* ====== 右侧表单区 ====== */
+.login-form-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background:
+    radial-gradient(circle at top right, rgba(240, 253, 244, 0.7), transparent 40%),
+    linear-gradient(180deg, #fefefe 0%, #f9fafb 100%);
+}
+
+.login-form-wrap {
   width: 100%;
   max-width: 420px;
-  padding: 48px 40px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  box-sizing: border-box;
-  transition: all 0.3s ease;
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: 40px;
+.login-form-header {
+  margin-bottom: 36px;
 }
 
-.login-title {
-  margin: 0 0 12px;
-  font-size: 28px;
-  font-weight: 600;
-  color: #1f2f3d;
-  letter-spacing: 1px;
+.login-form-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--color-primary-dark);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
 }
 
-.login-subtitle {
+.login-form-sub {
   margin: 0;
   font-size: 15px;
-  color: #909399;
+  color: var(--color-text-secondary);
 }
 
-.login-tabs {
-  :deep(.el-tabs__nav-wrap::after) {
-    height: 1px;
-    background-color: #ebeef5;
-  }
-  :deep(.el-tabs__item) {
-    font-size: 16px;
-    height: 50px;
-    line-height: 50px;
-    color: #606266;
-    font-weight: 500;
-  }
-  :deep(.el-tabs__item.is-active) {
-    color: var(--el-color-primary);
-    font-weight: 600;
-  }
-  :deep(.el-tabs__active-bar) {
-    height: 3px;
-    border-radius: 3px;
-  }
+/* Tabs styling */
+.login-tabs :deep(.el-tabs__header) {
+  margin-bottom: 24px;
 }
 
-.login-form {
-  margin-top: 32px;
+.login-tabs :deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background: var(--color-border);
 }
 
-:deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #dcdfe6 inset;
-  padding: 1px 15px;
-  border-radius: 6px;
-  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
-}
-
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #c0c4cc inset;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
-}
-
-:deep(.el-input__inner) {
-  height: 44px;
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  margin-top: -4px;
-}
-
-.submit-btn {
-  width: 100%;
+.login-tabs :deep(.el-tabs__item) {
   font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+.login-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--color-primary);
+}
+
+.login-tabs :deep(.el-tabs__active-bar) {
+  background-color: var(--color-primary);
+  height: 3px;
+  border-radius: 3px;
+}
+
+/* Input override */
+.login-tabs :deep(.el-input__wrapper) {
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+  transition: box-shadow var(--transition-fast);
+}
+
+.login-tabs :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--color-gray-400) inset;
+}
+
+.login-tabs :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--color-primary) inset, 0 0 0 3px rgba(26, 122, 58, 0.12) inset !important;
+}
+
+.login-tabs :deep(.el-input__inner) {
   height: 44px;
-  border-radius: 6px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  transition: all 0.3s;
 }
 
-.submit-btn:hover {
+.login-submit {
+  width: 100%;
+  height: 48px;
+  margin-top: 12px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.login-submit:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  box-shadow: var(--shadow-brand);
 }
 
-.submit-btn:active {
+.login-submit:active {
   transform: translateY(0);
+}
+
+/* ====== 响应式：小屏隐藏左侧 ====== */
+@media (max-width: 960px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    display: none;
+  }
+
+  .login-form-area {
+    padding: 40px 24px;
+    min-height: 100vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-form-area {
+    padding: 32px 16px;
+  }
+
+  .login-form-title {
+    font-size: 26px;
+  }
 }
 </style>

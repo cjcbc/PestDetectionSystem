@@ -50,22 +50,6 @@
         </div>
 
         <div class="header-right">
-          <el-dropdown @command="handleUserMenuClick">
-            <div class="user-menu">
-              <div class="avatar">
-                <i class="el-icon-user"></i>
-              </div>
-              <span class="username">{{ currentUsername }}</span>
-              <i class="el-icon-arrow-down"></i>
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人设置</el-dropdown-item>
-                <el-dropdown-item command="password">修改密码</el-dropdown-item>
-                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
         </div>
       </header>
 
@@ -74,35 +58,14 @@
         <router-view />
       </div>
     </div>
-
-    <!-- 修改密码对话框 -->
-    <ChangePasswordModal 
-      v-model="showChangePasswordModal"
-      is-admin
-      @success="handlePasswordChangeSuccess"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useAppStore } from '@/stores/app'
-import { logout } from '@/api/admin'
-import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-const router = useRouter()
 const route = useRoute()
-const appStore = useAppStore()
-
-// 修改密码对话框
-const showChangePasswordModal = ref(false)
-
-// 当前用户名
-const currentUsername = computed(() => {
-  return appStore.userInfo?.username || '管理员'
-})
 
 // 面包屑导航
 const breadcrumbs = computed(() => {
@@ -121,47 +84,6 @@ const breadcrumbs = computed(() => {
 
   return items
 })
-
-// 用户菜单点击处理
-const handleUserMenuClick = (command: string) => {
-  switch (command) {
-    case 'profile':
-      router.push('/user')
-      break
-    case 'password':
-      showChangePasswordModal.value = true
-      break
-    case 'logout':
-      handleLogout()
-      break
-  }
-}
-
-// 处理密码修改成功
-const handlePasswordChangeSuccess = () => {
-  ElMessage.success('密码修改成功，请重新登录')
-  // 可选：清除登录状态并跳转到登录页面
-  // appStore.logout()
-  // router.push('/login')
-}
-
-// 退出登录
-const handleLogout = async () => {
-  try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await logout()
-    appStore.logout()
-    ElMessage.success('已退出登录')
-    await router.push('/login')
-  } catch {
-    // 取消退出或错误
-  }
-}
 </script>
 
 <style scoped>
@@ -177,6 +99,6 @@ const handleLogout = async () => {
 }
 
 .user-menu:hover {
-  color: #409eff;
+  color: var(--color-primary);
 }
 </style>

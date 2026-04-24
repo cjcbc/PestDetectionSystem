@@ -35,7 +35,7 @@
 .chat-sidebar__header {
   padding: 24px;
   border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-  background: linear-gradient(180deg, rgba(240, 253, 244, 0.95) 0%, rgba(255, 255, 255, 0.92) 100%);
+  background: linear-gradient(180deg, var(--color-bg-brand) 0%, rgba(255, 255, 255, 0.92) 100%);
 }
 
 .chat-sidebar__list {
@@ -59,7 +59,7 @@
 
 .chat-session-item:hover,
 .chat-session-item.is-active {
-  background: linear-gradient(135deg, rgba(22, 101, 52, 0.1) 0%, rgba(187, 247, 208, 0.55) 100%);
+  background: linear-gradient(135deg, rgba(26, 122, 58, 0.12) 0%, rgba(74, 222, 128, 0.2) 100%);
 }
 
 .chat-session-item__title {
@@ -103,13 +103,13 @@
   flex-direction: column;
   justify-content: center;
   background:
-    radial-gradient(circle at top right, rgba(187, 247, 208, 0.55), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.92) 100%);
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.4), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 253, 244, 0.92) 100%);
 }
 
 .chat-empty__eyebrow {
   margin-bottom: 12px;
-  color: #166534;
+  color: var(--color-primary-dark);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -152,7 +152,7 @@
 .chat-entry-card:hover,
 .chat-prompt-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 32px rgba(22, 101, 52, 0.1);
+  box-shadow: var(--shadow-brand);
 }
 
 .chat-entry-card__title,
@@ -233,18 +233,19 @@
   padding: 16px 18px;
   border-radius: 22px;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+  contain: layout style;
 }
 
 .chat-message-item.is-user .chat-message-item__bubble {
-  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
   color: #fff;
-  border-top-right-radius: 8px;
+  border-top-right-radius: var(--radius-sm);
 }
 
 .chat-message-item.is-assistant .chat-message-item__bubble {
   background: #f5f7f8;
   color: var(--color-text-primary);
-  border-top-left-radius: 8px;
+  border-top-left-radius: var(--radius-sm);
 }
 
 .chat-message-item__plain {
@@ -270,8 +271,8 @@
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 18px 0 0 rgba(34, 197, 94, 0.65), 36px 0 0 rgba(34, 197, 94, 0.35);
+  background: var(--color-primary);
+  box-shadow: 18px 0 0 rgba(26, 122, 58, 0.65), 36px 0 0 rgba(26, 122, 58, 0.35);
   animation: chat-pulse 1s infinite ease-in-out;
 }
 

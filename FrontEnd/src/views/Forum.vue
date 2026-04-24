@@ -8,7 +8,7 @@
       <el-button type="primary" @click="goCreate">发布帖子</el-button>
     </div>
 
-    <el-card class="filter-card">
+    <el-card class="filter-card filter-card--sticky">
       <div class="filters">
         <el-radio-group v-model="category" @change="handleFilterChange">
           <el-radio-button label="all">全部</el-radio-button>
@@ -38,10 +38,10 @@
     <el-empty v-if="!loading && posts.length === 0" description="暂无帖子，快来发布第一条内容" />
 
     <div v-loading="loading" class="post-list">
-      <el-card v-for="post in posts" :key="post.id" class="post-card" @click="goDetail(post.id)">
+      <el-card v-for="post in posts" :key="post.id" class="post-card" :class="getPostCategoryClass(post.category)" @click="goDetail(post.id)">
         <div class="post-main">
           <div class="post-meta-top">
-            <el-tag effect="plain">{{ post.category || '未分类' }}</el-tag>
+            <el-tag effect="plain" :class="'category-tag--' + getPostCategoryKey(post.category)">{{ post.category || '未分类' }}</el-tag>
             <span>{{ formatTime(post.createdTime) }}</span>
           </div>
 
@@ -49,10 +49,10 @@
           <p class="summary">{{ post.summary || getContentPreview(post.content) }}</p>
 
           <div class="post-meta-bottom">
-            <span>作者：{{ post.author }}</span>
-            <span>浏览 {{ post.viewCount }}</span>
-            <span>点赞 {{ post.likeCount }}</span>
-            <span>评论 {{ post.commentCount }}</span>
+            <span class="meta-item"><el-icon><User /></el-icon> {{ post.author }}</span>
+            <span class="meta-item"><el-icon><View /></el-icon> {{ post.viewCount }}</span>
+            <span class="meta-item"><el-icon><Star /></el-icon> {{ post.likeCount }}</span>
+            <span class="meta-item"><el-icon><ChatLineSquare /></el-icon> {{ post.commentCount }}</span>
           </div>
         </div>
       </el-card>
@@ -77,6 +77,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getPosts } from '@/api/forum'
 import type { ForumPost } from '@/types/forum'
+import { User, View, Star, ChatLineSquare } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -131,6 +132,16 @@ function getContentPreview(content: string) {
   return plain.length > 100 ? `${plain.slice(0, 100)}...` : plain
 }
 
+function getPostCategoryKey(category: string | undefined): string {
+  if (!category) return 'other'
+  const map: Record<string, string> = { '资讯': 'info', '预警': 'alert', '技巧': 'tips' }
+  return map[category] || 'other'
+}
+
+function getPostCategoryClass(category: string | undefined): string {
+  return 'post-card--' + getPostCategoryKey(category)
+}
+
 onMounted(fetchPosts)
 </script>
 
@@ -157,6 +168,12 @@ onMounted(fetchPosts)
   color: var(--color-text-secondary);
 }
 
+.filter-card--sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
 .filters {
   display: grid;
   gap: 12px;
@@ -175,10 +192,76 @@ onMounted(fetchPosts)
 
 .post-card {
   cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Category-specific color coding */
+.post-card--info {
+  border-left: 4px solid #3b82f6;
+}
+
+.post-card--alert {
+  border-left: 4px solid #ef4444;
+}
+
+.post-card--tips {
+  border-left: 4px solid var(--color-primary);
+}
+
+.post-card--other {
+  border-left: 4px solid var(--color-gray-400);
 }
 
 .post-card:hover {
   border-color: var(--el-color-primary-light-5);
+  transform: translateX(4px);
+}
+
+.post-card--info:hover {
+  border-color: #3b82f6;
+  border-left-color: #3b82f6;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.12);
+}
+
+.post-card--alert:hover {
+  border-color: #ef4444;
+  border-left-color: #ef4444;
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.12);
+}
+
+.post-card--tips:hover {
+  border-color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  box-shadow: var(--shadow-brand);
+}
+
+.post-card--other:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Category tag colors */
+:deep(.category-tag--info) {
+  --el-tag-bg-color: rgba(59, 130, 246, 0.1);
+  --el-tag-border-color: rgba(59, 130, 246, 0.2);
+  --el-tag-text-color: #1d4ed8;
+}
+
+:deep(.category-tag--alert) {
+  --el-tag-bg-color: rgba(239, 68, 68, 0.1);
+  --el-tag-border-color: rgba(239, 68, 68, 0.2);
+  --el-tag-text-color: #b91c1c;
+}
+
+:deep(.category-tag--tips) {
+  --el-tag-bg-color: var(--color-bg-brand);
+  --el-tag-border-color: var(--color-border-brand);
+  --el-tag-text-color: var(--color-primary-dark);
+}
+
+:deep(.category-tag--other) {
+  --el-tag-bg-color: var(--color-gray-100);
+  --el-tag-border-color: var(--color-gray-300);
+  --el-tag-text-color: var(--color-gray-600);
 }
 
 .post-main {
@@ -193,6 +276,12 @@ onMounted(fetchPosts)
   gap: 10px;
   color: var(--color-text-secondary);
   font-size: 13px;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .post-main h3 {

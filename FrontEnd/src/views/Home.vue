@@ -22,16 +22,18 @@
 
       <div class="grid">
         <article
-          v-for="item in sections"
+          v-for="(item, index) in sections"
           :key="item.title"
           class="entry-card"
+          :class="'entry-card--' + index"
+          :style="{ animationDelay: `${index * 80}ms` }"
           @click="router.push(item.to)"
         >
           <div class="entry-card__top">
             <div class="entry-card__icon" :style="{ background: item.color }">
               <el-icon><component :is="item.icon" /></el-icon>
             </div>
-            <span class="entry-card__tag">{{ item.tag }}</span>
+            <span class="entry-card__tag" :style="{ background: item.tagBg, color: item.tagColor }">{{ item.tag }}</span>
           </div>
           <h3>{{ item.title }}</h3>
           <p>{{ item.description }}</p>
@@ -64,7 +66,9 @@ const sections = [
     to: '/detection',
     tag: '识别服务',
     icon: Crop,
-    color: 'linear-gradient(135deg, #166534 0%, #4ade80 100%)'
+    color: 'linear-gradient(135deg, #14532d 0%, #4ade80 100%)',
+    tagBg: 'rgba(22, 101, 52, 0.1)',
+    tagColor: '#166534'
   },
   {
     title: 'AI问答',
@@ -72,7 +76,9 @@ const sections = [
     to: '/chat',
     tag: '在线咨询',
     icon: ChatDotRound,
-    color: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)'
+    color: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+    tagBg: 'rgba(30, 58, 138, 0.1)',
+    tagColor: '#1e3a8a'
   },
   {
     title: '交流论坛',
@@ -80,7 +86,9 @@ const sections = [
     to: '/forum',
     tag: '社区交流',
     icon: Files,
-    color: 'linear-gradient(135deg, #7c2d12 0%, #ea580c 100%)'
+    color: 'linear-gradient(135deg, #7c2d12 0%, #ea580c 100%)',
+    tagBg: 'rgba(124, 45, 18, 0.1)',
+    tagColor: '#9a3412'
   },
   {
     title: '个人中心',
@@ -88,7 +96,9 @@ const sections = [
     to: '/user-profile',
     tag: '个人管理',
     icon: User,
-    color: 'linear-gradient(135deg, #5b21b6 0%, #a855f7 100%)'
+    color: 'linear-gradient(135deg, #5b21b6 0%, #a855f7 100%)',
+    tagBg: 'rgba(91, 33, 182, 0.1)',
+    tagColor: '#5b21b6'
   }
 ]
 </script>
@@ -107,12 +117,11 @@ const sections = [
 
 .hero__content {
   padding: 48px;
-  border-radius: 28px;
+  border-radius: var(--radius-2xl);
   background:
-    linear-gradient(135deg, rgba(20, 83, 45, 0.96) 0%, rgba(34, 197, 94, 0.88) 100%),
-    linear-gradient(180deg, #14532d 0%, #22c55e 100%);
+    linear-gradient(135deg, rgba(20, 83, 45, 0.96) 0%, rgba(26, 122, 58, 0.9) 50%, rgba(74, 222, 128, 0.85) 100%);
   color: #fff;
-  box-shadow: 0 28px 60px rgba(20, 83, 45, 0.18);
+  box-shadow: var(--shadow-brand-lg);
 }
 
 .hero__eyebrow {
@@ -122,7 +131,8 @@ const sections = [
 .hero h1 {
   margin-bottom: 28px;
   font-size: clamp(32px, 4vw, 48px);
-  line-height: 1.1;
+  line-height: 1.15;
+  font-family: var(--font-display);
 }
 
 .hero__desc {
@@ -145,10 +155,10 @@ const sections = [
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   color: #fff;
   font-size: 22px;
-  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.12);
+  box-shadow: var(--shadow-md);
 }
 
 .section {
@@ -172,21 +182,51 @@ const sections = [
 
 .entry-card {
   padding: 24px;
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(17, 24, 39, 0.06);
-  box-shadow: 0 18px 36px rgba(17, 24, 39, 0.06);
+  box-shadow: var(--shadow-md);
   transition:
     transform var(--transition-normal),
     box-shadow var(--transition-normal),
     border-color var(--transition-fast);
   cursor: pointer;
+  animation: cardFadeIn 0.5s ease-out backwards;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .entry-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(34, 197, 94, 0.25);
-  box-shadow: 0 24px 40px rgba(21, 128, 61, 0.12);
+}
+
+.entry-card--0:hover {
+  border-color: rgba(74, 222, 128, 0.4);
+  box-shadow: 0 12px 28px rgba(74, 222, 128, 0.18);
+}
+
+.entry-card--1:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.18);
+}
+
+.entry-card--2:hover {
+  border-color: rgba(234, 88, 12, 0.35);
+  box-shadow: 0 12px 28px rgba(234, 88, 12, 0.18);
+}
+
+.entry-card--3:hover {
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 12px 28px rgba(168, 85, 247, 0.18);
 }
 
 .entry-card__top {
@@ -198,9 +238,7 @@ const sections = [
 
 .entry-card__tag {
   padding: 6px 12px;
-  border-radius: 999px;
-  background: #eff6f0;
-  color: #166534;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 700;
 }
@@ -220,7 +258,7 @@ const sections = [
   gap: 8px;
   padding: 0;
   background: transparent;
-  color: #166534;
+  color: var(--color-primary-dark);
   font-size: 15px;
   font-weight: 700;
 }

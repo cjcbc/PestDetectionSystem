@@ -123,13 +123,19 @@ router.beforeEach((to, _from, next) => {
   // 检查是否需要认证
   if (to.meta.requiresAuth && !loggedIn) {
     ElMessage.warning('请先登录')
-    next({ name: 'Home' })
+    next({ name: 'Login' })
     return
   }
 
   // 检查是否需要管理员权限
   if (to.meta.requiresAdmin && !adminRole) {
     ElMessage.error('您没有权限访问此页面')
+    next({ name: 'Home' })
+    return
+  }
+
+  // 已登录用户访问登录/注册页时跳转到首页
+  if (loggedIn && (to.name === 'Login' || to.name === 'Register')) {
     next({ name: 'Home' })
     return
   }

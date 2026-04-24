@@ -28,49 +28,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js/lib/core'
-import bash from 'highlight.js/lib/languages/bash'
-import css from 'highlight.js/lib/languages/css'
-import java from 'highlight.js/lib/languages/java'
-import javascript from 'highlight.js/lib/languages/javascript'
-import json from 'highlight.js/lib/languages/json'
-import markdown from 'highlight.js/lib/languages/markdown'
-import plaintext from 'highlight.js/lib/languages/plaintext'
-import python from 'highlight.js/lib/languages/python'
-import sql from 'highlight.js/lib/languages/sql'
-import typescript from 'highlight.js/lib/languages/typescript'
-import xml from 'highlight.js/lib/languages/xml'
 import 'highlight.js/styles/github.css'
 
-const props = withDefaults(defineProps<{
-  content: string
-  isStreaming?: boolean
-}>(), {
-  isStreaming: false
-})
-
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('css', css)
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('js', javascript)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('markdown', markdown)
-hljs.registerLanguage('md', markdown)
-hljs.registerLanguage('plaintext', plaintext)
-hljs.registerLanguage('text', plaintext)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('py', python)
-hljs.registerLanguage('sql', sql)
-hljs.registerLanguage('typescript', typescript)
-hljs.registerLanguage('ts', typescript)
-hljs.registerLanguage('xml', xml)
-hljs.registerLanguage('html', xml)
-
-const md = new MarkdownIt({
+const md = shallowRef(new MarkdownIt({
   html: true,
   linkify: true,
   breaks: true,
@@ -79,15 +43,17 @@ const md = new MarkdownIt({
     const highlighted = validLanguage
       ? hljs.highlight(code, { language: validLanguage }).value
       : hljs.highlightAuto(code).value
-
     return `<pre class="hljs"><code>${highlighted}</code></pre>`
   }
+}))
+
+const props = withDefaults(defineProps<{
+  content: string
+  isStreaming?: boolean
+}>(), {
+  isStreaming: false
 })
 
-/**
- * 分离 <think>...</think> 和正文
- * 支持流式场景：<think> 可能还未闭合
- */
 function parseThinkBlock(raw: string, streaming: boolean): { think: string; main: string; thinkDone: boolean } {
   // 完整闭合的 think 块
   const closedRegex = /^<think>([\s\S]*?)<\/think>\s*/
@@ -120,15 +86,35 @@ const thinkContent = computed(() => parsed.value.think)
 const mainContent = computed(() => parsed.value.main)
 const isThinking = computed(() => props.isStreaming && thinkContent.value && !parsed.value.thinkDone)
 
-const thinkHtml = computed(() => {
-  if (!thinkContent.value) return ''
-  return DOMPurify.sanitize(md.render(thinkContent.value))
-})
+// Debounced HTML rendering — during streaming, batch DOM updates at ~150ms intervals
+const thinkHtml = ref('')
+const mainHtml = ref('')
+let thinkTimer: ReturnType<typeof setTimeout> | null = null
+let mainTimer: ReturnType<typeof setTimeout> | null = null
 
-const mainHtml = computed(() => {
-  if (!mainContent.value) return ''
-  return DOMPurify.sanitize(md.render(mainContent.value))
-})
+watch(thinkContent, (val) => {
+  if (thinkTimer) clearTimeout(thinkTimer)
+  if (!val) {
+    thinkHtml.value = ''
+    return
+  }
+  const delay = props.isStreaming ? 150 : 0
+  thinkTimer = setTimeout(() => {
+    thinkHtml.value = DOMPurify.sanitize(md.value.render(val))
+  }, delay)
+}, { immediate: true })
+
+watch(mainContent, (val) => {
+  if (mainTimer) clearTimeout(mainTimer)
+  if (!val) {
+    mainHtml.value = ''
+    return
+  }
+  const delay = props.isStreaming ? 150 : 0
+  mainTimer = setTimeout(() => {
+    mainHtml.value = DOMPurify.sanitize(md.value.render(val))
+  }, delay)
+}, { immediate: true })
 </script>
 
 <style scoped>

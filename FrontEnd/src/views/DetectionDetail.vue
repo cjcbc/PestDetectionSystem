@@ -53,7 +53,8 @@
                     :stroke="getStatusCircleColor(record.status)"
                     stroke-width="10"
                     stroke-dasharray="439.823"
-                    :stroke-dashoffset="439.823 * (1 - record.confidence)"
+                    :stroke-dashoffset="detailDashOffset"
+                    class="confidence-ring"
                     stroke-linecap="round"
                     transform="rotate(-90 80 80)"
                   />
@@ -148,6 +149,11 @@ const record = ref<DetectResult | null>(null)
 const confidencePercent = computed(() => {
   if (!record.value) return 0
   return Math.round(record.value.confidence * 100)
+})
+
+const DETAIL_CIRCUMFERENCE = 439.823
+const detailDashOffset = computed(() => {
+  return DETAIL_CIRCUMFERENCE * (1 - (record.value?.confidence ?? 0))
 })
 
 async function loadRecord() {
@@ -321,6 +327,10 @@ h2 {
 
 .confidence-circle {
   margin-bottom: var(--spacing-md);
+}
+
+.confidence-ring {
+  transition: stroke-dashoffset 1s ease-out;
 }
 
 .confidence-value {
