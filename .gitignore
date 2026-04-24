@@ -1,3 +1,10 @@
 Files/
 .idea/
 .vscode/
+
+tools/
+.m2/
+docs/
+.claude/
+memory/
+*.md

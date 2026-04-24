@@ -6,9 +6,7 @@ import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
 import com.gzy.pestdetectionsystem.service.AuthService;
 import com.gzy.pestdetectionsystem.service.UserService;
-import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.Result;
-import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
     private final UserService userService;
     private final AuthService authService;
-    private final RedisUtil redisUtil;
-    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
-    private static final String USER_PROFILE_CACHE_KEY_PREFIX = "user:profile:";
 
     @PostMapping("/login")
     public Result<UserVO> login(@RequestBody LoginDTO dto) {
@@ -38,7 +33,8 @@ public class UserController {
 
     @PatchMapping("/bind")
     public Result<?> bind(@RequestBody BindDTO dto, HttpServletRequest request){
-        authService.bind(dto,request);
+        Long userId = (Long) request.getAttribute("userId");
+        authService.bind(userId, dto);
         return Result.ok("绑定成功");
     }
 
@@ -75,15 +71,10 @@ public class UserController {
         return Result.ok("密码修改成功");
     }
 
-    // 退出登录设置一个token黑名单
     @PostMapping("/logout")
     public Result<?> logout(HttpServletRequest request) {
         String token = (String) request.getAttribute("token");
-        if (token != null) {
-            long ttl = JwtUtil.getUserAuthTTLFromToken(token);// 毫秒
-            // 添加 token 到黑名单
-            redisUtil.set(TOKEN_BLACKLIST_PREFIX + token, "revoked", ttl / 1000);
-        }
+        userService.logoutUser(request, token);
         return Result.ok("登出成功");
     }
 

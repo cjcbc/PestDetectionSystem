@@ -1,5 +1,7 @@
 package com.gzy.pestdetectionsystem.service.impl;
 
+import com.gzy.pestdetectionsystem.annotation.Cache;
+import com.gzy.pestdetectionsystem.annotation.CacheEvict;
 import com.gzy.pestdetectionsystem.config.UserProperties;
 import com.gzy.pestdetectionsystem.dto.ChangePasswordDTO;
 import com.gzy.pestdetectionsystem.entity.User;
@@ -7,11 +9,14 @@ import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.service.UserService;
+import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import com.gzy.pestdetectionsystem.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,16 +28,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
-    private static final long USER_PROFILE_CACHE_TTL_SECONDS = 30 * 60;
-    private static final String USER_PROFILE_CACHE_KEY_PREFIX = "user:profile:";
-
     private final UserMapper userMapper;
     private final UserProperties userProperties;
     private final RedisUtil redisUtil;
+
+    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
+    private static final String USER_PROFILE_CACHE_KEY_PREFIX = "user:profile";
+
+    private UserService self;
+
+    @Autowired
+    public void setSelf(@Lazy UserService self) {
+        this.self = self;
+    }
 
     public UserServiceImpl(UserMapper userMapper, UserProperties userProperties, RedisUtil redisUtil) {
         this.userMapper = userMapper;
@@ -81,6 +95,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#id")
     public void updateUsername(Long id, String username) {
         User user = userMapper.selectByIdForUpdate(id);
         if (user == null)
@@ -89,11 +104,11 @@ public class UserServiceImpl implements UserService {
             return;
         user.setUsername(username);
         userMapper.updateById(user);
-        evictUserProfileCache(id);
     }
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#id")
     public void updateSex(Long id, int sex){
         User user = userMapper.selectByIdForUpdate(id);
         if (user == null)
@@ -102,7 +117,6 @@ public class UserServiceImpl implements UserService {
             return;
         user.setSex(sex);
         userMapper.updateById(user);
-        evictUserProfileCache(id);
     }
 
 
@@ -148,26 +162,12 @@ public class UserServiceImpl implements UserService {
         return userVo;
     }
 
-    private String buildUserProfileCacheKey(Long userId) {
-        return USER_PROFILE_CACHE_KEY_PREFIX + userId;
-    }
-
-    private void cacheUserProfile(UserVO userVo) {
-        if (userVo == null || userVo.getId() == null) {
-            return;
-        }
-        boolean cached = redisUtil.set(buildUserProfileCacheKey(Long.valueOf(userVo.getId())), userVo, USER_PROFILE_CACHE_TTL_SECONDS);
-        if (cached) {
-            log.info("user profile cache updated, userId={}, ttlSeconds={}", userVo.getId(), USER_PROFILE_CACHE_TTL_SECONDS);
-        }
-    }
-
-    // 数据更新删缓存
-    private void evictUserProfileCache(Long userId) {
+    @Override
+    public void evictProfileCache(Long userId) {
         if (userId == null) {
             return;
         }
-        redisUtil.del(buildUserProfileCacheKey(userId));
+        redisUtil.del("user:profile:" + userId);
         log.info("user profile cache evicted, userId={}", userId);
     }
 
@@ -176,29 +176,21 @@ public class UserServiceImpl implements UserService {
     public UserVO getProfile(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String token = (String) request.getAttribute("token");
-        UserVO userVo = getProfile(userId);
+        UserVO userVo = self.getProfile(userId);
         userVo.setToken(token);
         return userVo;
     }
 
     // 查询信息用
+    @Override
+    @Cache(prefix = "user:profile", suffix = "#userId", ttl = 30, randomTime = 5, timeUnit = TimeUnit.MINUTES)
     public UserVO getProfile(Long userId) {
-        // redis有直接返回
-        String cacheKey = buildUserProfileCacheKey(userId);
-        UserVO cachedUser = redisUtil.get(cacheKey, UserVO.class);
-        if (cachedUser != null) {
-            log.info("user profile cache hit, userId={}", userId);
-            return cachedUser;
-        }
-
-        log.info("user profile cache missed, userId={}", userId);
-        UserVO userVo = getUserInfo(userId);
-        cacheUserProfile(userVo);
-        return userVo;
+        return getUserInfo(userId);
     }
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#userId")
     public void updateImage(Long userId, MultipartFile file) {
         User user = userMapper.selectByIdForUpdate(userId);
         if (user == null) {
@@ -249,12 +241,12 @@ public class UserServiceImpl implements UserService {
         // 更新数据库
         user.setImage(filePath);
         userMapper.updateById(user);
-        evictUserProfileCache(userId);
         log.info("用户 {} 头像更新为: {}", userId, filePath);
     }
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#userId")
     public void changePassword(Long userId, ChangePasswordDTO dto) {
         // 参数校验
         if (dto == null || dto.getOldPassword() == null || dto.getNewPassword() == null || dto.getConfirmPassword() == null) {
@@ -290,26 +282,29 @@ public class UserServiceImpl implements UserService {
         user.setSalt(newSalt);
         user.setPassword(newEncryptedPassword);
         userMapper.updateById(user);
-        evictUserProfileCache(userId);
         log.info("用户 {} 密码已修改", userId);
     }
 
     @Override
     @Transactional
-    public void disableUser(String userId) {
+    @CacheEvict(prefix = "user:profile", suffix = "#userId")
+    public void disableUser(Long operatorId, String userId) {
         Long id = Long.parseLong(userId);
+        if (Objects.equals(operatorId, id)) {
+            throw new BusinessException(CommonErrorCode.FORBIDDEN, "不能禁用自己");
+        }
         User user = userMapper.selectByIdForUpdate(id);
         if (user == null) {
             throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
         }
         user.setStatus(0);
         userMapper.updateById(user);
-        evictUserProfileCache(id);
         log.info("用户已禁用: {}", userId);
     }
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#userId")
     public void enableUser(String userId) {
         Long id = Long.parseLong(userId);
         User user = userMapper.selectByIdForUpdate(id);
@@ -318,12 +313,12 @@ public class UserServiceImpl implements UserService {
         }
         user.setStatus(1);
         userMapper.updateById(user);
-        evictUserProfileCache(id);
         log.info("用户已启用: {}", userId);
     }
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#userId")
     public void deleteUser(String userId) {
         Long id = Long.parseLong(userId);
         User user = userMapper.selectById(id);
@@ -331,12 +326,12 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
         }
         userMapper.deleteById(id);
-        evictUserProfileCache(id);
         log.info("用户已删除: {}", userId);
     }
 
     @Override
     @Transactional
+    @CacheEvict(prefix = "user:profile", suffix = "#userId")
     public void setUserRole(String userId, Integer role) {
         Long id = Long.parseLong(userId);
         User user = userMapper.selectByIdForUpdate(id);
@@ -345,8 +340,17 @@ public class UserServiceImpl implements UserService {
         }
         // role对应的是enum，需要根据id找到对应的Role
         // 假设role 0为admin，1为user，需要根据实际的Role enum调整
-        // 这里简化处理，实际应该有proper的Role转换
-        evictUserProfileCache(id);
         log.info("用户角色已修改: {} -> {}", userId, role);
     }
+
+    @Override
+    @CacheEvict(prefix = USER_PROFILE_CACHE_KEY_PREFIX, suffix = "#request.getAttribute('userId')")
+    public void logoutUser(HttpServletRequest request, String token) {
+        if (token != null) {
+            long ttlMs = JwtUtil.getUserAuthTTLFromToken(token);
+            redisUtil.set(TOKEN_BLACKLIST_PREFIX + token, "revoked", ttlMs / 1000);
+        }
+        log.info("用户: {} 退出登录", JwtUtil.getUserIdFromToken(token));
+    }
+
 }

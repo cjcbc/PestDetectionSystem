@@ -43,7 +43,7 @@ public interface UserService {
     /**
      * 禁用用户
      */
-    void disableUser(String userId);
+    void disableUser(Long operatorId, String userId);
 
     /**
      * 启用用户
@@ -55,8 +55,12 @@ public interface UserService {
      */
     void deleteUser(String userId);
 
+    void evictProfileCache(Long userId);
+
     /**
      * 修改用户角色
      */
     void setUserRole(String userId, Integer role);
+
+    void logoutUser(HttpServletRequest request, String token);
 }

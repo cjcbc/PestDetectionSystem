@@ -1,6 +1,7 @@
 package com.gzy.pestdetectionsystem.config;
 
 import com.gzy.pestdetectionsystem.interceptor.CommonInterceptor;
+import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -15,18 +16,19 @@ import java.util.Set;
 public class WebConfig implements WebMvcConfigurer {
 
     private final RedisUtil redisUtil;
+    private final UserMapper userMapper;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 注意：拦截器在 context-path (/api) 处理后，所以这里的路径不包含 /api 前缀
         
         // 管理员拦截器（角色0）- 拦截 /admin 路径
-        registry.addInterceptor(new CommonInterceptor(Set.of(0), redisUtil))
+        registry.addInterceptor(new CommonInterceptor(Set.of(0), redisUtil, userMapper))
                 .addPathPatterns("/admin/**")
-                .excludePathPatterns("/admin/login", "/admin/logout");
+                .excludePathPatterns("/admin/login");
 
         // 用户拦截器（角色0和1）- 拦截 /user /detect /chat 路径
-        registry.addInterceptor(new CommonInterceptor(Set.of(0, 1), redisUtil))
+        registry.addInterceptor(new CommonInterceptor(Set.of(0, 1), redisUtil, userMapper))
                 .addPathPatterns("/user/**", "/detect/**", "/chat/**")
                 .excludePathPatterns(
                         "/user/login",

@@ -1,6 +1,8 @@
 package com.gzy.pestdetectionsystem.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gzy.pestdetectionsystem.entity.User;
+import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import com.gzy.pestdetectionsystem.utils.Result;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;
@@ -18,10 +20,12 @@ public class CommonInterceptor implements HandlerInterceptor {
     private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
     private final Set<Integer> allowedRoles;
     private final RedisUtil redisUtil;
+    private final UserMapper userMapper;
 
-    public CommonInterceptor(Set<Integer> allowedRoles, RedisUtil redisUtil) {
+    public CommonInterceptor(Set<Integer> allowedRoles, RedisUtil redisUtil, UserMapper userMapper) {
         this.allowedRoles = allowedRoles;
         this.redisUtil = redisUtil;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -54,6 +58,12 @@ public class CommonInterceptor implements HandlerInterceptor {
             return false;
         } catch (Exception e) {
             writeResult(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
+            return false;
+        }
+
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getStatus() == null || user.getStatus() != 1) {
+            writeResult(response, HttpServletResponse.SC_UNAUTHORIZED, "用户已被禁用");
             return false;
         }
 

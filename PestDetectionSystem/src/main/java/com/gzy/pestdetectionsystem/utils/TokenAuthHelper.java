@@ -2,6 +2,8 @@ package com.gzy.pestdetectionsystem.utils;
 
 import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
+import com.gzy.pestdetectionsystem.entity.User;
+import com.gzy.pestdetectionsystem.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,6 +17,7 @@ public class TokenAuthHelper {
     private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
 
     private final RedisUtil redisUtil;
+    private final UserMapper userMapper;
 
     public AuthUser requireUser(HttpServletRequest request) {
         AuthUser user = optionalUser(request);
@@ -38,7 +41,13 @@ public class TokenAuthHelper {
         try {
             Long userId = JwtUtil.getUserIdFromToken(token);
             Integer roleId = JwtUtil.getRoleIdFromToken(token);
+            User user = userMapper.selectById(userId);
+            if (user == null || user.getStatus() == null || user.getStatus() != 1) {
+                throw new BusinessException(CommonErrorCode.USER_BANNED);
+            }
             return new AuthUser(userId, roleId);
+        } catch (BusinessException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new BusinessException(CommonErrorCode.TOKEN_INVALID);
         }

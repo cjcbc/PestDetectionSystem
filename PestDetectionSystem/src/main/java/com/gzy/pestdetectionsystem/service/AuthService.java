@@ -4,7 +4,6 @@ import com.gzy.pestdetectionsystem.dto.BindDTO;
 import com.gzy.pestdetectionsystem.dto.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.RegisterDTO;
 import com.gzy.pestdetectionsystem.vo.UserVO;
-import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
     /**
@@ -25,7 +24,8 @@ public interface AuthService {
     /**
      * 用户绑定手机号或邮箱
      *
-     * @param dto 前端传来的绑定信息（手机号/邮箱）
+     * @param userId 当前登录用户 ID
+     * @param dto    前端传来的绑定信息（手机号/邮箱）
      */
-    public void bind(BindDTO dto, HttpServletRequest request);
+    public void bind(Long userId, BindDTO dto);
 }

@@ -77,9 +77,6 @@ public class JwtUtil {
         Claims claims = parseToken(token);
         long expiration = claims.getExpiration().getTime();
         long ttl = expiration - System.currentTimeMillis();
-        System.out.println("exp: " + expiration);
-        System.out.println("current: " + System.currentTimeMillis());
-        System.out.println("ttl: " + ttl);
         return Math.max(0, ttl);
     }
 
