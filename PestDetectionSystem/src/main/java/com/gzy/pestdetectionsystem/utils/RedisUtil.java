@@ -173,6 +173,14 @@ public final class RedisUtil {
         return set(key, value);
     }
 
+    public boolean set(String key, Object value, long time, TimeUnit timeUnit) {
+        if (time <= 0) {
+            return set(key, value);
+        }
+        return execute("setWithTimeUnit", key,
+                redisTemplate -> redisTemplate.opsForValue().set(key, value, time, timeUnit));
+    }
+
     public boolean setWithRandomTtl(String key, Object value, long time, long randomExtraSeconds) {
         long expireSeconds = resolveExpireSeconds(time, randomExtraSeconds);
         if (expireSeconds <= 0) {
