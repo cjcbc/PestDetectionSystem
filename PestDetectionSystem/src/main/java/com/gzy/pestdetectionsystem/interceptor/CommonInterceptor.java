@@ -1,8 +1,8 @@
 package com.gzy.pestdetectionsystem.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gzy.pestdetectionsystem.entity.User;
-import com.gzy.pestdetectionsystem.mapper.UserMapper;
+import com.gzy.pestdetectionsystem.entity.user.User;
+import com.gzy.pestdetectionsystem.mapper.user.UserMapper;
 import com.gzy.pestdetectionsystem.utils.Result;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;

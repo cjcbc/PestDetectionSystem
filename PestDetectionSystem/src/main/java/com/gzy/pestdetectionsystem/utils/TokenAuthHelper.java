@@ -2,8 +2,8 @@ package com.gzy.pestdetectionsystem.utils;
 
 import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
-import com.gzy.pestdetectionsystem.entity.User;
-import com.gzy.pestdetectionsystem.mapper.UserMapper;
+import com.gzy.pestdetectionsystem.entity.user.User;
+import com.gzy.pestdetectionsystem.mapper.user.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
