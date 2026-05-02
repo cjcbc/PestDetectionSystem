@@ -1,5 +1,12 @@
 import request from './request'
-import type { LoginPayload, LoginResponse, RegisterPayload, RegisterResponse, UserInfo, BindPayload, ChangePasswordPayload } from '@/types/user'
+import type { LoginPayload, LoginResponse, RegisterPayload, RegisterResponse, UserInfo, BindPayload, ChangePasswordPayload, VerificationCodeResponse } from '@/types/user'
+
+/**
+ * 获取登录/注册验证码
+ */
+export function getVerificationCode(): Promise<VerificationCodeResponse> {
+  return request.get('/user/verification-code')
+}
 
 /**
  * 用户登录

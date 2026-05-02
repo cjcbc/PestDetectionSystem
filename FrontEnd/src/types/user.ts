@@ -3,6 +3,8 @@
 export interface LoginPayload {
   account: string  // 邮箱或手机号
   password: string
+  verificationCodeId: string
+  verificationCode: string
 }
 
 export interface LoginResponse {
@@ -23,11 +25,18 @@ export interface RegisterPayload {
   password: string
   email?: string
   phone?: string
+  verificationCodeId: string
+  verificationCode: string
 }
 
 export interface RegisterResponse {
   code: number
   message: string
+}
+
+export interface VerificationCodeResponse {
+  verificationCodeId: string
+  image: string
 }
 
 export interface UserInfo {

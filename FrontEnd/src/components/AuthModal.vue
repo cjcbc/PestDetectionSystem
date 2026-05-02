@@ -38,6 +38,37 @@
             />
           </el-form-item>
 
+          <el-form-item label="验证码" prop="verificationCode">
+            <div class="captcha-row">
+              <el-input
+                v-model="loginForm.verificationCode"
+                placeholder="请输入验证码"
+                maxlength="4"
+                clearable
+                @keyup.enter="handleLogin"
+              />
+              <div class="captcha-actions">
+                <button
+                  class="captcha-image-button"
+                  type="button"
+                  :disabled="loginCaptcha.loading"
+                  @click="loadVerificationCode('login')"
+                >
+                  <img v-if="loginCaptcha.image" :src="loginCaptcha.image" alt="验证码" />
+                  <span v-else>刷新</span>
+                </button>
+                <button
+                  class="captcha-refresh-link"
+                  type="button"
+                  :disabled="loginCaptcha.loading"
+                  @click="loadVerificationCode('login')"
+                >
+                  看不清？点击刷新
+                </button>
+              </div>
+            </div>
+          </el-form-item>
+
           <div class="form-footer">
             <el-link type="primary" href="#" disabled>忘记密码?</el-link>
           </div>
@@ -100,6 +131,37 @@
               @keyup.enter="handleRegister"
             />
           </el-form-item>
+
+          <el-form-item label="验证码" prop="verificationCode">
+            <div class="captcha-row">
+              <el-input
+                v-model="registerForm.verificationCode"
+                placeholder="请输入验证码"
+                maxlength="4"
+                clearable
+                @keyup.enter="handleRegister"
+              />
+              <div class="captcha-actions">
+                <button
+                  class="captcha-image-button"
+                  type="button"
+                  :disabled="registerCaptcha.loading"
+                  @click="loadVerificationCode('register')"
+                >
+                  <img v-if="registerCaptcha.image" :src="registerCaptcha.image" alt="验证码" />
+                  <span v-else>刷新</span>
+                </button>
+                <button
+                  class="captcha-refresh-link"
+                  type="button"
+                  :disabled="registerCaptcha.loading"
+                  @click="loadVerificationCode('register')"
+                >
+                  看不清？点击刷新
+                </button>
+              </div>
+            </div>
+          </el-form-item>
         </el-form>
       </el-tab-pane>
     </el-tabs>
@@ -121,7 +183,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage, ElForm } from 'element-plus'
-import { login, register } from '@/api/user'
+import { getVerificationCode, login, register } from '@/api/user'
 import { useAppStore } from '@/stores/app'
 import { isValidEmail, isValidPhone, isValidUsername } from '@/utils/validators'
 import type { LoginPayload, RegisterPayload } from '@/types/user'
@@ -132,7 +194,7 @@ const { modelValue } = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  update: [modelValue: boolean]
+  'update:modelValue': [modelValue: boolean]
   success: []
 }>()
 
@@ -149,7 +211,9 @@ const isLoading = ref(false)
 
 const loginForm = reactive({
   account: '',
-  password: ''
+  password: '',
+  verificationCodeId: '',
+  verificationCode: ''
 })
 
 const registerForm = reactive({
@@ -157,7 +221,19 @@ const registerForm = reactive({
   email: '',
   phone: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  verificationCodeId: '',
+  verificationCode: ''
+})
+
+const loginCaptcha = reactive({
+  image: '',
+  loading: false
+})
+
+const registerCaptcha = reactive({
+  image: '',
+  loading: false
 })
 
 // 验证规则
@@ -178,6 +254,13 @@ const loginRules = {
     {
       min: 6,
       message: '密码至少6个字符',
+      trigger: 'blur'
+    }
+  ],
+  verificationCode: [
+    {
+      required: true,
+      message: '验证码不能为空',
       trigger: 'blur'
     }
   ]
@@ -259,6 +342,13 @@ const registerRules = {
       },
       trigger: 'blur'
     }
+  ],
+  verificationCode: [
+    {
+      required: true,
+      message: '验证码不能为空',
+      trigger: 'blur'
+    }
   ]
 }
 
@@ -269,6 +359,22 @@ const visible = computed({
 })
 
 // Methods
+async function loadVerificationCode(target: 'login' | 'register') {
+  const captcha = target === 'login' ? loginCaptcha : registerCaptcha
+  const form = target === 'login' ? loginForm : registerForm
+  captcha.loading = true
+  try {
+    const response = await getVerificationCode()
+    form.verificationCodeId = response.verificationCodeId
+    form.verificationCode = ''
+    captcha.image = response.image
+  } catch {
+    ElMessage.error('验证码加载失败')
+  } finally {
+    captcha.loading = false
+  }
+}
+
 async function handleLogin() {
   if (!loginFormRef.value) return
 
@@ -278,7 +384,9 @@ async function handleLogin() {
     isLoading.value = true
     const payload: LoginPayload = {
       account: loginForm.account,
-      password: loginForm.password
+      password: loginForm.password,
+      verificationCodeId: loginForm.verificationCodeId,
+      verificationCode: loginForm.verificationCode
     }
 
     const response = await login(payload)
@@ -290,14 +398,8 @@ async function handleLogin() {
 
     // 重置表单
     resetLoginForm()
-  } catch (error: any) {
-    if (error.response?.data?.message) {
-      ElMessage.error(error.response.data.message)
-    } else if (error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('登录失败，请检查输入')
-    }
+  } catch {
+    await loadVerificationCode('login')
   } finally {
     isLoading.value = false
   }
@@ -314,26 +416,24 @@ async function handleRegister() {
       username: registerForm.username || undefined,
       password: registerForm.password,
       email: registerForm.email,
-      phone: registerForm.phone || undefined
+      phone: registerForm.phone || undefined,
+      verificationCodeId: registerForm.verificationCodeId,
+      verificationCode: registerForm.verificationCode
     }
 
     await register(payload)
     ElMessage.success('注册成功，请登录')
+    const registeredEmail = registerForm.email
 
     // 切换到登录标签
     activeTab.value = 'login'
     resetRegisterForm()
 
     // 自动填入邮箱
-    loginForm.account = registerForm.email
-  } catch (error: any) {
-    if (error.response?.data?.message) {
-      ElMessage.error(error.response.data.message)
-    } else if (error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('注册失败，请重试')
-    }
+    loginForm.account = registeredEmail
+    await loadVerificationCode('login')
+  } catch {
+    await loadVerificationCode('register')
   } finally {
     isLoading.value = false
   }
@@ -346,6 +446,9 @@ function handleClose() {
 function resetLoginForm() {
   loginForm.account = ''
   loginForm.password = ''
+  loginForm.verificationCodeId = ''
+  loginForm.verificationCode = ''
+  loginCaptcha.image = ''
   loginFormRef.value?.clearValidate()
 }
 
@@ -355,15 +458,27 @@ function resetRegisterForm() {
   registerForm.phone = ''
   registerForm.password = ''
   registerForm.confirmPassword = ''
+  registerForm.verificationCodeId = ''
+  registerForm.verificationCode = ''
+  registerCaptcha.image = ''
   registerFormRef.value?.clearValidate()
 }
 
 // 监听标签切换
-watch(activeTab, (newTab) => {
+watch(activeTab, async (newTab) => {
   if (newTab === 'login') {
-    resetLoginForm()
-  } else {
     resetRegisterForm()
+  } else {
+    resetLoginForm()
+  }
+  if (visible.value) {
+    await loadVerificationCode(newTab)
+  }
+})
+
+watch(visible, async (newVisible) => {
+  if (newVisible) {
+    await loadVerificationCode(activeTab.value)
   }
 })
 </script>
@@ -381,6 +496,57 @@ watch(activeTab, (newTab) => {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
+}
+
+.captcha-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 124px;
+  gap: 10px;
+  align-items: start;
+}
+
+.captcha-actions {
+  display: grid;
+  gap: 4px;
+}
+
+.captcha-image-button {
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.captcha-image-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.captcha-image-button img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.captcha-refresh-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+}
+
+.captcha-refresh-link:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 :deep(.el-dialog__footer) {

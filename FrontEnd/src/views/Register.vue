@@ -99,6 +99,38 @@
             />
           </el-form-item>
 
+          <el-form-item label="验证码" prop="verificationCode">
+            <div class="captcha-row">
+              <el-input
+                v-model="form.verificationCode"
+                placeholder="请输入验证码"
+                maxlength="4"
+                clearable
+                size="large"
+                @keyup.enter="handleRegister"
+              />
+              <div class="captcha-actions">
+                <button
+                  class="captcha-image-button"
+                  type="button"
+                  :disabled="captcha.loading"
+                  @click="loadVerificationCode"
+                >
+                  <img v-if="captcha.image" :src="captcha.image" alt="验证码" />
+                  <span v-else>刷新</span>
+                </button>
+                <button
+                  class="captcha-refresh-link"
+                  type="button"
+                  :disabled="captcha.loading"
+                  @click="loadVerificationCode"
+                >
+                  看不清？点击刷新
+                </button>
+              </div>
+            </div>
+          </el-form-item>
+
           <el-button
             type="primary"
             class="register-submit"
@@ -119,11 +151,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { register } from '@/api/user'
+import { getVerificationCode, register } from '@/api/user'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -134,7 +166,14 @@ const form = reactive({
   email: '',
   phone: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  verificationCodeId: '',
+  verificationCode: ''
+})
+
+const captcha = reactive({
+  image: '',
+  loading: false
 })
 
 const validatePassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
@@ -178,7 +217,24 @@ const rules: FormRules = {
   ],
   confirmPassword: [
     { required: true, validator: validateConfirmPassword, trigger: 'blur' }
+  ],
+  verificationCode: [
+    { required: true, message: '验证码不能为空', trigger: 'blur' }
   ]
+}
+
+async function loadVerificationCode() {
+  captcha.loading = true
+  try {
+    const response = await getVerificationCode()
+    form.verificationCodeId = response.verificationCodeId
+    form.verificationCode = ''
+    captcha.image = response.image
+  } catch {
+    ElMessage.error('验证码加载失败')
+  } finally {
+    captcha.loading = false
+  }
 }
 
 async function handleRegister() {
@@ -193,17 +249,24 @@ async function handleRegister() {
       username: form.username,
       password: form.password,
       email: form.email,
-      phone: form.phone
+      phone: form.phone,
+      verificationCodeId: form.verificationCodeId,
+      verificationCode: form.verificationCode
     })
 
     ElMessage.success('注册成功，请登录')
     router.push({ name: 'Login' })
   } catch (error) {
     console.error('注册失败:', error)
+    await loadVerificationCode()
   } finally {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  loadVerificationCode()
+})
 </script>
 
 <style scoped>
@@ -349,6 +412,57 @@ async function handleRegister() {
 
 .register-form-area :deep(.el-input__inner) {
   height: 44px;
+}
+
+.captcha-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 124px;
+  gap: 10px;
+  align-items: start;
+}
+
+.captcha-actions {
+  display: grid;
+  gap: 4px;
+}
+
+.captcha-image-button {
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.captcha-image-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.captcha-image-button img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.captcha-refresh-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+}
+
+.captcha-refresh-link:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .register-submit {
