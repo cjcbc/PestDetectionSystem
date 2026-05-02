@@ -38,6 +38,10 @@
             />
           </el-form-item>
 
+          <div class="login-options">
+            <el-checkbox v-model="rememberPassword">记住密码</el-checkbox>
+          </div>
+
           <el-form-item label="验证码" prop="verificationCode">
             <div class="captcha-row">
               <el-input
@@ -186,6 +190,7 @@ import { ElMessage, ElForm } from 'element-plus'
 import { getVerificationCode, login, register } from '@/api/user'
 import { useAppStore } from '@/stores/app'
 import { isValidEmail, isValidPhone, isValidUsername } from '@/utils/validators'
+import { clearRememberedLogin, getRememberedLogin, setRememberedLogin } from '@/utils/auth'
 import type { LoginPayload, RegisterPayload } from '@/types/user'
 
 // Props & Emits
@@ -208,6 +213,7 @@ const registerFormRef = ref<InstanceType<typeof ElForm>>()
 // 本地状态
 const activeTab = ref<'login' | 'register'>('login')
 const isLoading = ref(false)
+const rememberPassword = ref(false)
 
 const loginForm = reactive({
   account: '',
@@ -391,6 +397,11 @@ async function handleLogin() {
 
     const response = await login(payload)
     appStore.setUser(response, response.token)
+    if (rememberPassword.value) {
+      setRememberedLogin({ account: loginForm.account, password: loginForm.password })
+    } else {
+      clearRememberedLogin()
+    }
 
     ElMessage.success('登录成功')
     visible.value = false
@@ -452,6 +463,15 @@ function resetLoginForm() {
   loginFormRef.value?.clearValidate()
 }
 
+function loadRememberedLogin() {
+  const rememberedLogin = getRememberedLogin()
+  if (!rememberedLogin) return
+
+  loginForm.account = rememberedLogin.account
+  loginForm.password = rememberedLogin.password
+  rememberPassword.value = true
+}
+
 function resetRegisterForm() {
   registerForm.username = ''
   registerForm.email = ''
@@ -478,6 +498,7 @@ watch(activeTab, async (newTab) => {
 
 watch(visible, async (newVisible) => {
   if (newVisible) {
+    loadRememberedLogin()
     await loadVerificationCode(activeTab.value)
   }
 })
@@ -503,6 +524,12 @@ watch(visible, async (newVisible) => {
   grid-template-columns: minmax(0, 1fr) 124px;
   gap: 10px;
   align-items: start;
+}
+
+.login-options {
+  display: flex;
+  justify-content: flex-start;
+  margin: -8px 0 16px;
 }
 
 .captcha-actions {

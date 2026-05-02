@@ -386,6 +386,7 @@ import {
   bindPhoneEmail
 } from '@/api/user'
 import { getDetectRecords } from '@/api/detect'
+import { isMessageHandled } from '@/api/request'
 import { isAdmin } from '@/utils/auth'
 import ChangePasswordModal from '@/components/ChangePasswordModal.vue'
 import {
@@ -505,7 +506,9 @@ async function loadUserInfo() {
     originForm.email = info.email || ''
     originForm.phone = info.phone || ''
   } catch (error) {
-    ElMessage.error('加载用户信息失败')
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载用户信息失败')
+    }
     console.error(error)
   }
 }
@@ -572,7 +575,9 @@ async function saveAllChanges() {
   } catch (error: any) {
     const errorMsg = error?.response?.data?.message || '修改失败'
     generalError.value = errorMsg
-    ElMessage.error(errorMsg)
+    if (!isMessageHandled(error)) {
+      ElMessage.error(errorMsg)
+    }
   } finally {
     isSaving.value = false
   }
@@ -603,7 +608,9 @@ async function handleAvatarChange(event: Event) {
     await loadUserInfo()
     ElMessage.success('头像上传成功')
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || '上传失败')
+    if (!isMessageHandled(error)) {
+      ElMessage.error(error?.response?.data?.message || '上传失败')
+    }
   } finally {
     isUploading.value = false
     uploadProgress.value = 0

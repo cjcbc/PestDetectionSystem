@@ -138,6 +138,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDetectRecords } from '@/api/detect'
+import { isMessageHandled } from '@/api/request'
 import type { DetectResult } from '@/types/detect'
 
 const route = useRoute()
@@ -175,8 +176,10 @@ async function loadRecord() {
       ElMessage.warning('未找到该识别记录')
       router.push('/detection')
     }
-  } catch {
-    ElMessage.error('加载记录失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载记录失败')
+    }
     router.push('/detection')
   } finally {
     loading.value = false

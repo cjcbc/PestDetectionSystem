@@ -150,6 +150,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Delete, User, Promotion } from '@element-plus/icons-vue'
 import { isLoggedIn } from '@/utils/auth'
 import { useChatStore } from '@/stores/chat'
+import { isMessageHandled } from '@/api/request'
 import { formatMessageTime } from '@/utils/format'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
@@ -211,8 +212,10 @@ async function loadCurrentSession() {
       chatStore.fetchQuota()
     ])
     scrollToBottom()
-  } catch {
-    ElMessage.error('加载会话失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载会话失败')
+    }
     router.push('/chat')
   }
 }
@@ -253,8 +256,10 @@ async function handleDeleteCurrentSession() {
     await chatStore.removeSession(sessionId.value)
     ElMessage.success('会话已删除')
     router.push('/chat')
-  } catch {
-    ElMessage.error('删除会话失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('删除会话失败')
+    }
   }
 }
 

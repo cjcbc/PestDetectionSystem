@@ -76,6 +76,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getPosts } from '@/api/forum'
+import { isMessageHandled } from '@/api/request'
 import type { ForumPost } from '@/types/forum'
 import { User, View, Star, ChatLineSquare } from '@element-plus/icons-vue'
 
@@ -99,7 +100,9 @@ async function fetchPosts() {
     total.value = res.total
   } catch (error) {
     console.error(error)
-    ElMessage.error('加载帖子失败')
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载帖子失败')
+    }
   } finally {
     loading.value = false
   }

@@ -131,6 +131,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { isLoggedIn } from '@/utils/auth'
 import { useChatStore } from '@/stores/chat'
+import { isMessageHandled } from '@/api/request'
 import { formatSessionTime } from '@/utils/format'
 
 const router = useRouter()
@@ -233,8 +234,10 @@ async function handleCreateSession() {
 
     form.title = ''
     form.scene = 'expert'
-  } catch {
-    ElMessage.error('创建会话失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('创建会话失败')
+    }
   } finally {
     submitting.value = false
   }
@@ -259,8 +262,10 @@ async function handleDeleteSession(sessionId: string) {
   try {
     await chatStore.removeSession(sessionId)
     ElMessage.success('会话已删除')
-  } catch {
-    ElMessage.error('删除会话失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('删除会话失败')
+    }
   }
 }
 

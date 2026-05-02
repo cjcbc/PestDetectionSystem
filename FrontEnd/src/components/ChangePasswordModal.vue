@@ -56,6 +56,7 @@ import { ref, reactive } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { changeUserPassword, changeAdminPassword } from '@/api/user'
+import { isMessageHandled } from '@/api/request'
 import type { ChangePasswordPayload } from '@/types/user'
 
 interface Props {
@@ -141,6 +142,9 @@ const handleSubmit = async () => {
     emit('success')
     handleClose()
   } catch (error: any) {
+    if (isMessageHandled(error)) {
+      return
+    }
     if (error.response?.data?.message) {
       ElMessage.error(error.response.data.message)
     } else if (error.message) {

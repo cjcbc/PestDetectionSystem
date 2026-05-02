@@ -4,6 +4,12 @@ import type { UserInfo } from '@/types/user'
 const TOKEN_KEY = 'token'
 const ROLE_KEY = 'userRole'
 const USER_INFO_KEY = 'userInfo'
+const REMEMBERED_LOGIN_KEY = 'rememberedLogin'
+
+export interface RememberedLogin {
+  account: string
+  password: string
+}
 
 /**
  * 设置 token
@@ -83,4 +89,23 @@ export function clearUserInfo(): void {
  */
 export function isAdmin(): boolean {
   return getUserRole() === 0
+}
+
+export function setRememberedLogin(login: RememberedLogin): void {
+  localStorage.setItem(REMEMBERED_LOGIN_KEY, JSON.stringify(login))
+}
+
+export function getRememberedLogin(): RememberedLogin | null {
+  const info = localStorage.getItem(REMEMBERED_LOGIN_KEY)
+  if (!info) return null
+  try {
+    return JSON.parse(info) as RememberedLogin
+  } catch {
+    localStorage.removeItem(REMEMBERED_LOGIN_KEY)
+    return null
+  }
+}
+
+export function clearRememberedLogin(): void {
+  localStorage.removeItem(REMEMBERED_LOGIN_KEY)
 }

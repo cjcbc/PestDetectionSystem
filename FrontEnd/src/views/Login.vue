@@ -445,6 +445,15 @@ function resetLoginForm() {
   loginFormRef.value?.clearValidate()
 }
 
+function loadRememberedLogin() {
+  const rememberedLogin = getRememberedLogin()
+  if (!rememberedLogin) return
+
+  loginForm.account = rememberedLogin.account
+  loginForm.password = rememberedLogin.password
+  rememberPassword.value = true
+}
+
 watch(activeTab, async (newTab) => {
   if (newTab === 'login') {
     resetRegisterForm()
@@ -455,6 +464,7 @@ watch(activeTab, async (newTab) => {
 })
 
 onMounted(() => {
+  loadRememberedLogin()
   loadVerificationCode(activeTab.value)
 })
 </script>
@@ -636,6 +646,12 @@ onMounted(() => {
   grid-template-columns: minmax(0, 1fr) 124px;
   gap: 10px;
   align-items: start;
+}
+
+.login-options {
+  display: flex;
+  justify-content: flex-start;
+  margin: -8px 0 16px;
 }
 
 .captcha-actions {

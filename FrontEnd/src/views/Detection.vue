@@ -179,10 +179,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { UploadFilled, ChatDotRound, Refresh } from '@element-plus/icons-vue'
-import { isLoggedIn } from '@/utils/auth'
+import { isMessageHandled } from '@/api/request'
 import { detect, getDetectRecords } from '@/api/detect'
 import type { DetectResult } from '@/types/detect'
 import { fileToBase64, isImageFile } from '@/utils/image'
+import { isLoggedIn } from '@/utils/auth'
 
 const router = useRouter()
 
@@ -287,8 +288,10 @@ async function handleDetect() {
     ElMessage.success(`识别完成：${getStatusLabel(result.status)}`)
     await loadRecords()
     router.push({ path: `/detection/${result.id}` })
-  } catch {
-    ElMessage.error('识别失败，请重试')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('识别失败，请重试')
+    }
   } finally {
     isLoading.value = false
   }
@@ -303,8 +306,10 @@ async function loadRecords() {
   try {
     isLoadingRecords.value = true
     records.value = await getDetectRecords()
-  } catch {
-    ElMessage.error('加载历史记录失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载历史记录失败')
+    }
   } finally {
     isLoadingRecords.value = false
   }

@@ -1,15 +1,54 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { useAppStore } from '@/stores/app'
+import { showError, showWarning } from '@/utils/message'
 import router from '@/router'
 
 let isHandling401 = false
+
+export interface MessageHandledError extends Error {
+  __messageHandled?: boolean
+}
+
+export function markMessageHandled<T extends Error>(error: T): T & MessageHandledError {
+  return Object.assign(error, { __messageHandled: true })
+}
+
+export function isMessageHandled(error: unknown): boolean {
+  return Boolean(error && typeof error === 'object' && '__messageHandled' in error && (error as MessageHandledError).__messageHandled)
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888/api'
 
 // 调试：打印实际的 baseURL
 console.log('[API] 当前 baseURL:', API_BASE_URL)
+
+export function handleAuthExpired() {
+  if (isHandling401) return
+
+  isHandling401 = true
+  const appStore = useAppStore()
+  const redirect = router.currentRoute.value.fullPath
+
+  appStore.logout()
+  showWarning('登录已过期，请重新登录')
+  ElMessageBox.confirm('是否回到登录页面？', '登录状态已过期', {
+    confirmButtonText: '去登录',
+    cancelButtonText: '暂不登录',
+    type: 'warning'
+  })
+    .then(() => {
+      return router.push({
+        name: 'Login',
+        query: redirect && redirect !== '/login' ? { redirect } : undefined
+      })
+    })
+    .catch(() => {})
+    .finally(() => {
+      isHandling401 = false
+    })
+}
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
@@ -43,8 +82,8 @@ service.interceptors.response.use(
     if (code === 200 || code === 0) {
       return data
     } else {
-      ElMessage.error(message || '请求失败')
-      return Promise.reject(new Error(message || '请求失败'))
+      showError(message || '请求失败')
+      return Promise.reject(markMessageHandled(new Error(message || '请求失败')))
     }
   },
   (error) => {
@@ -56,31 +95,31 @@ service.interceptors.response.use(
 
       switch (status) {
         case 401:
-          if (!isHandling401) {
-            isHandling401 = true
-            const appStore = useAppStore()
-            appStore.logout()
-            ElMessage.error('登录过期')
-            router.push({ name: 'Home' })
-            setTimeout(() => { isHandling401 = false }, 3000)
-          }
+          handleAuthExpired()
+          markMessageHandled(error)
           break
         case 403:
-          ElMessage.error(message || '权限不足，拒绝访问')
+          showError(message || '权限不足，拒绝访问')
+          markMessageHandled(error)
           break
         case 404:
-          ElMessage.error(message || '请求地址不存在')
+          showError(message || '请求地址不存在')
+          markMessageHandled(error)
           break
         case 500:
-          ElMessage.error(message || '服务器错误，请稍后重试')
+          showError(message || '服务器错误，请稍后重试')
+          markMessageHandled(error)
           break
         default:
-          ElMessage.error(message || '请求失败')
+          showError(message || '请求失败')
+          markMessageHandled(error)
       }
     } else if (error.code === 'ECONNABORTED') {
-      ElMessage.error('请求超时，请检查网络连接')
+      showError('请求超时，请检查网络连接')
+      markMessageHandled(error)
     } else {
-      ElMessage.error('网络错误，请检查网络连接')
+      showError('网络错误，请检查网络连接')
+      markMessageHandled(error)
     }
 
     return Promise.reject(error)

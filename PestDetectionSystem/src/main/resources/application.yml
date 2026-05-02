@@ -33,7 +33,7 @@ server:
 
 jwt:
   secret: SHUCOLLEGEOFCOMPUTERENGINEERINGANDSCIENCE22123131
-  expiration: 7200000  # 2小时（毫秒）
+  expiration: 604800000  # 7天（毫秒）
 
 llm:
   base-url: https://api.minimaxi.com/v1

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { isAdmin, isLoggedIn } from '@/utils/auth'
-import { ElMessage } from 'element-plus'
+import { showError, showWarning } from '@/utils/message'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -122,14 +122,14 @@ router.beforeEach((to, _from, next) => {
 
   // 检查是否需要认证
   if (to.meta.requiresAuth && !loggedIn) {
-    ElMessage.warning('请先登录')
+    showWarning('请先登录')
     next({ name: 'Login' })
     return
   }
 
   // 检查是否需要管理员权限
   if (to.meta.requiresAdmin && !adminRole) {
-    ElMessage.error('您没有权限访问此页面')
+    showError('您没有权限访问此页面')
     next({ name: 'Home' })
     return
   }

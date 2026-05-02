@@ -162,6 +162,7 @@ import {
   updateWarning
 } from '@/api/warning'
 import type { CreateWarningPayload, WarningItem } from '@/types/warning'
+import { isMessageHandled } from '@/api/request'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -211,7 +212,9 @@ async function fetchList() {
     total.value = res.total
   } catch (error) {
     console.error(error)
-    ElMessage.error('加载预警失败')
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载预警失败')
+    }
   } finally {
     loading.value = false
   }

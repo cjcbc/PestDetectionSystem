@@ -4,6 +4,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { isMessageHandled } from '@/api/request'
 import type { AdminUser, SystemStats } from '@/types/admin'
 import { 
   getAllUsers, 
@@ -26,7 +27,9 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       users.value = await getAllUsers()
     } catch (error) {
-      ElMessage.error('加载用户列表失败')
+      if (!isMessageHandled(error)) {
+        ElMessage.error('加载用户列表失败')
+      }
       console.error(error)
     } finally {
       isLoading.value = false
@@ -38,7 +41,9 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       stats.value = await getSystemStats()
     } catch (error) {
-      ElMessage.error('加载统计数据失败')
+      if (!isMessageHandled(error)) {
+        ElMessage.error('加载统计数据失败')
+      }
       console.error(error)
     }
   }
@@ -55,7 +60,9 @@ export const useAdminStore = defineStore('admin', () => {
       }
       await fetchUsers()
     } catch (error) {
-      ElMessage.error('操作失败')
+      if (!isMessageHandled(error)) {
+        ElMessage.error('操作失败')
+      }
       console.error(error)
     }
   }
@@ -67,7 +74,9 @@ export const useAdminStore = defineStore('admin', () => {
       ElMessage.success('角色已修改')
       await fetchUsers()
     } catch (error) {
-      ElMessage.error('修改失败')
+      if (!isMessageHandled(error)) {
+        ElMessage.error('修改失败')
+      }
       console.error(error)
     }
   }
@@ -79,7 +88,9 @@ export const useAdminStore = defineStore('admin', () => {
       ElMessage.success('用户已删除')
       await fetchUsers()
     } catch (error) {
-      ElMessage.error('删除失败')
+      if (!isMessageHandled(error)) {
+        ElMessage.error('删除失败')
+      }
       console.error(error)
     }
   }

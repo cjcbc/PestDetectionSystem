@@ -130,6 +130,7 @@ import {
 } from '@/api/forum'
 import type { ForumComment, ForumPost } from '@/types/forum'
 import { useAppStore } from '@/stores/app'
+import { isMessageHandled } from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -158,7 +159,9 @@ async function fetchPost() {
     post.value = await getPostDetail(postId.value)
   } catch (error) {
     console.error(error)
-    ElMessage.error('加载帖子详情失败')
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载帖子详情失败')
+    }
   } finally {
     postLoading.value = false
   }
@@ -171,7 +174,9 @@ async function fetchComments() {
     comments.value = res.list
   } catch (error) {
     console.error(error)
-    ElMessage.error('加载评论失败')
+    if (!isMessageHandled(error)) {
+      ElMessage.error('加载评论失败')
+    }
   } finally {
     commentLoading.value = false
   }
