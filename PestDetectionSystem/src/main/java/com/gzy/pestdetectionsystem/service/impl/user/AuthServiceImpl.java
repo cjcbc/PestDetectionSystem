@@ -10,6 +10,7 @@ import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.user.UserMapper;
 import com.gzy.pestdetectionsystem.service.user.AuthService;
 import com.gzy.pestdetectionsystem.service.user.UserService;
+import com.gzy.pestdetectionsystem.service.user.VerificationCodeService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
@@ -26,17 +27,20 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final UserService userService;
+    private final VerificationCodeService verificationCodeService;
 
-    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService) {
+    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService, VerificationCodeService verificationCodeService) {
         this.userMapper = userMapper;
         this.snowflakeIdGenerator = snowflakeIdGenerator;
         this.userService = userService;
+        this.verificationCodeService = verificationCodeService;
     }
 
     public void register(RegisterDTO dto) {
         if (Objects.isNull(dto)) {
             throw new BusinessException(CommonErrorCode.REGISTER_PARAM_INVALID);
         }
+        verificationCodeService.validate(dto.getVerificationCodeId(), dto.getVerificationCode());
         log.info("用户注册请求，phone={}, email={}", dto.getPhone(), dto.getEmail());
 
         //手机号和邮箱至少有一个
@@ -85,6 +89,7 @@ public class AuthServiceImpl implements AuthService {
         if (Objects.isNull(dto)) {
             throw new BusinessException(CommonErrorCode.LOGIN_PARAM_INVALID);
         }
+        verificationCodeService.validate(dto.getVerificationCodeId(), dto.getVerificationCode());
         log.info("用户登录请求，account={}", dto.getAccount());
 
         User user = userMapper.selectByAccount(dto.getAccount());

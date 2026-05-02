@@ -10,4 +10,8 @@ public class LoginDTO {
     private String account;
 
     private String password;
+
+    private String verificationCodeId;
+
+    private String verificationCode;
 }

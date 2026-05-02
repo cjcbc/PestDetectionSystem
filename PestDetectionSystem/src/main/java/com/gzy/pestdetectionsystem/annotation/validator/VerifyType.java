@@ -1,4 +1,6 @@
-﻿package com.gzy.pestdetectionsystem.annotation.validator;
+package com.gzy.pestdetectionsystem.annotation.validator;
 
 public enum VerifyType {
+    PHONE,
+    EMAIL
 }

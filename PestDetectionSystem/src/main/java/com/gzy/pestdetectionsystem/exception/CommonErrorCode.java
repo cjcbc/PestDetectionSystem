@@ -55,6 +55,11 @@ public enum CommonErrorCode {
     CHANGE_PASSWORD_SAME_AS_OLD(40062, "新密码不能与原密码相同"),
     CHANGE_PASSWORD_NOT_MATCH(40063, "两次输入的新密码不一致"),
 
+    // 验证码 4007x
+    VERIFICATION_CODE_INVALID(40070, "验证码错误或已过期"),
+    VERIFICATION_CODE_REQUIRED(40071, "验证码不能为空"),
+    VERIFICATION_CODE_STORE_FAILED(40072, "验证码生成失败"),
+
     UNKNOWN(999999, "未知错误");
 
 

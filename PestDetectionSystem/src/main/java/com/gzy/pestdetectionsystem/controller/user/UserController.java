@@ -6,9 +6,12 @@ import com.gzy.pestdetectionsystem.dto.user.LoginDTO;
 import com.gzy.pestdetectionsystem.dto.user.RegisterDTO;
 import com.gzy.pestdetectionsystem.service.user.AuthService;
 import com.gzy.pestdetectionsystem.service.user.UserService;
+import com.gzy.pestdetectionsystem.service.user.VerificationCodeService;
 import com.gzy.pestdetectionsystem.utils.Result;
 import com.gzy.pestdetectionsystem.vo.user.UserVO;
+import com.gzy.pestdetectionsystem.vo.user.VerificationCodeVO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +22,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
     private final UserService userService;
     private final AuthService authService;
+    private final VerificationCodeService verificationCodeService;
+
+    @GetMapping("/verification-code")
+    public Result<VerificationCodeVO> verificationCode() {
+        return Result.ok(verificationCodeService.create());
+    }
 
     @PostMapping("/login")
     public Result<UserVO> login(@RequestBody LoginDTO dto) {
@@ -26,13 +35,13 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public Result<?> register(@RequestBody RegisterDTO dto){
+    public Result<?> register(@Valid @RequestBody RegisterDTO dto){
         authService.register(dto);
         return Result.ok("注册成功");
     }
 
     @PatchMapping("/bind")
-    public Result<?> bind(@RequestBody BindDTO dto, HttpServletRequest request){
+    public Result<?> bind(@Valid @RequestBody BindDTO dto, HttpServletRequest request){
         Long userId = (Long) request.getAttribute("userId");
         authService.bind(userId, dto);
         return Result.ok("绑定成功");
