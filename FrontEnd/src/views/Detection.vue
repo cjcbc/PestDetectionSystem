@@ -43,10 +43,10 @@
           type="primary"
           size="large"
           :loading="isLoading"
-          :disabled="!selectedFile"
+          :disabled="!selectedFile || detectLimit.isLimited.value"
           @click="handleDetect"
         >
-          {{ isLoading ? '识别中...' : '开始识别' }}
+          {{ isLoading ? '识别中...' : detectButtonText }}
         </el-button>
       </div>
     </el-card>
@@ -184,6 +184,7 @@ import { detect, getDetectRecords } from '@/api/detect'
 import type { DetectResult } from '@/types/detect'
 import { fileToBase64, isImageFile } from '@/utils/image'
 import { isLoggedIn } from '@/utils/auth'
+import { RATE_LIMIT_KEYS, useRateLimitCountdown } from '@/composables/useRateLimit'
 
 const router = useRouter()
 
@@ -196,6 +197,10 @@ const isDragover = ref(false)
 
 const isLoading = ref(false)
 const detectResult = ref<DetectResult | null>(null)
+const detectLimit = useRateLimitCountdown(RATE_LIMIT_KEYS.detect)
+const detectButtonText = computed(() =>
+  detectLimit.isLimited.value ? `请稍候 ${detectLimit.remainingSeconds.value}s` : '开始识别'
+)
 
 const records = ref<DetectResult[]>([])
 const isLoadingRecords = ref(false)
@@ -268,6 +273,8 @@ function clearSelection() {
 }
 
 async function handleDetect() {
+  if (detectLimit.isLimited.value) return
+
   // 检查是否登录
   if (!userIsLoggedIn.value) {
     ElMessage.warning('识别功能需要登录')

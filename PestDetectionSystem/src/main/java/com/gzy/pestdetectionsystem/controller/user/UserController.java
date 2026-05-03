@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.controller.user;
 
+import com.gzy.pestdetectionsystem.annotation.RateLimit;
 import com.gzy.pestdetectionsystem.dto.user.BindDTO;
 import com.gzy.pestdetectionsystem.dto.user.ChangePasswordDTO;
 import com.gzy.pestdetectionsystem.dto.user.LoginDTO;
@@ -24,16 +25,19 @@ public class UserController {
     private final AuthService authService;
     private final VerificationCodeService verificationCodeService;
 
+    @RateLimit
     @GetMapping("/verification-code")
     public Result<VerificationCodeVO> verificationCode() {
         return Result.ok(verificationCodeService.create());
     }
 
+    @RateLimit
     @PostMapping("/login")
     public Result<UserVO> login(@RequestBody LoginDTO dto) {
         return Result.ok(authService.login(dto));
     }
 
+    @RateLimit
     @PostMapping("/register")
     public Result<?> register(@Valid @RequestBody RegisterDTO dto){
         authService.register(dto);

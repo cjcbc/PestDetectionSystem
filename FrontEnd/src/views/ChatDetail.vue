@@ -129,11 +129,12 @@
             />
             <button
               class="chatgpt-send-btn"
-              :class="{ 'is-active': draft.trim().length > 0 }"
-              :disabled="chatStore.isSending || !draft.trim()"
+              :class="{ 'is-active': draft.trim().length > 0 && !chatLimit.isLimited.value, 'is-limited': chatLimit.isLimited.value }"
+              :disabled="chatStore.isSending || chatLimit.isLimited.value || !draft.trim()"
               @click="handleSend"
             >
-              <el-icon :size="20"><Promotion /></el-icon>
+              <span v-if="chatLimit.isLimited.value" class="chatgpt-send-btn__text">{{ sendButtonText }}</span>
+              <el-icon v-else :size="20"><Promotion /></el-icon>
             </button>
           </div>
           <p class="chatgpt-input-hint">AI 可能产生不准确的信息，建议在实际操作前进行验证。</p>
@@ -153,6 +154,7 @@ import { useChatStore } from '@/stores/chat'
 import { isMessageHandled } from '@/api/request'
 import { formatMessageTime } from '@/utils/format'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import { RATE_LIMIT_KEYS, useRateLimitCountdown } from '@/composables/useRateLimit'
 
 const route = useRoute()
 const router = useRouter()
@@ -163,6 +165,10 @@ const userIsLoggedIn = computed(() => isLoggedIn())
 const draft = ref('')
 const messageContainer = ref<HTMLElement | null>(null)
 const messagesEnd = ref<HTMLElement | null>(null)
+const chatLimit = useRateLimitCountdown(RATE_LIMIT_KEYS.chatStream)
+const sendButtonText = computed(() =>
+  chatLimit.isLimited.value ? `请稍候 ${chatLimit.remainingSeconds.value}s` : ''
+)
 
 const sessionId = computed(() => String(route.params.sessionId || ''))
 const detectionLabel = computed(() => String(route.query.detectionLabel || '').trim())
@@ -221,6 +227,8 @@ async function loadCurrentSession() {
 }
 
 async function handleSend() {
+  if (chatLimit.isLimited.value) return
+
   const content = draft.value.trim()
   if (!content) {
     ElMessage.warning('请输入消息内容')
@@ -659,6 +667,16 @@ onMounted(() => {
 
 .chatgpt-send-btn.is-active:hover {
   background: #333;
+}
+
+.chatgpt-send-btn.is-limited {
+  width: 88px;
+  background: #e6a23c;
+}
+
+.chatgpt-send-btn__text {
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .chatgpt-input-hint {

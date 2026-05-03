@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.controller.chat;
 
+import com.gzy.pestdetectionsystem.annotation.RateLimit;
 import com.gzy.pestdetectionsystem.dto.chat.CreateChatSessionDTO;
 import com.gzy.pestdetectionsystem.dto.chat.SendChatMessageDTO;
 import com.gzy.pestdetectionsystem.exception.BusinessException;
@@ -64,6 +65,7 @@ public class ChatController {
      * 发送消息（核心接口，支持连续对话）
      * POST /api/chat/send
      */
+    @RateLimit
     @PostMapping("/send")
     public Result<ChatReplyVO> sendMessage(@RequestBody SendChatMessageDTO dto,
                                            HttpServletRequest request) {
@@ -75,6 +77,7 @@ public class ChatController {
      * 流式发送消息（SSE）
      * POST /api/chat/send/stream
      */
+    @RateLimit
     @PostMapping(value = "/send/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter sendMessageStream(@RequestBody SendChatMessageDTO dto,
                                         HttpServletRequest request) {

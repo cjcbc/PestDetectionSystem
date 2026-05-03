@@ -89,7 +89,7 @@
                     <button
                       class="captcha-image-button"
                       type="button"
-                      :disabled="loginCaptcha.loading"
+                      :disabled="loginCaptcha.loading || captchaLimit.isLimited.value"
                       @click="loadVerificationCode('login')"
                     >
                       <img v-if="loginCaptcha.image" :src="loginCaptcha.image" alt="验证码" />
@@ -98,10 +98,10 @@
                     <button
                       class="captcha-refresh-link"
                       type="button"
-                      :disabled="loginCaptcha.loading"
+                      :disabled="loginCaptcha.loading || captchaLimit.isLimited.value"
                       @click="loadVerificationCode('login')"
                     >
-                      看不清？点击刷新
+                      {{ captchaButtonText }}
                     </button>
                   </div>
                 </div>
@@ -111,9 +111,10 @@
                 type="primary"
                 class="login-submit"
                 :loading="loginLoading"
+                :disabled="loginLimit.isLimited.value"
                 @click="handleLogin"
               >
-                登 录
+                {{ loginButtonText }}
               </el-button>
             </el-form>
           </el-tab-pane>
@@ -193,7 +194,7 @@
                     <button
                       class="captcha-image-button"
                       type="button"
-                      :disabled="registerCaptcha.loading"
+                      :disabled="registerCaptcha.loading || captchaLimit.isLimited.value"
                       @click="loadVerificationCode('register')"
                     >
                       <img v-if="registerCaptcha.image" :src="registerCaptcha.image" alt="验证码" />
@@ -202,10 +203,10 @@
                     <button
                       class="captcha-refresh-link"
                       type="button"
-                      :disabled="registerCaptcha.loading"
+                      :disabled="registerCaptcha.loading || captchaLimit.isLimited.value"
                       @click="loadVerificationCode('register')"
                     >
-                      看不清？点击刷新
+                      {{ captchaButtonText }}
                     </button>
                   </div>
                 </div>
@@ -215,9 +216,10 @@
                 type="primary"
                 class="login-submit"
                 :loading="registerLoading"
+                :disabled="registerLimit.isLimited.value"
                 @click="handleRegister"
               >
-                注 册
+                {{ registerButtonText }}
               </el-button>
             </el-form>
           </el-tab-pane>
@@ -228,11 +230,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, reactive, watch } from 'vue'
+import { computed, onMounted, ref, reactive, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElForm } from 'element-plus'
 import { getVerificationCode, login, register } from '@/api/user'
 import { useAppStore } from '@/stores/app'
+import { RATE_LIMIT_KEYS, useRateLimitCountdown } from '@/composables/useRateLimit'
 import { isValidEmail, isValidPhone, isValidUsername } from '@/utils/validators'
 import { clearRememberedLogin, getRememberedLogin, setRememberedLogin } from '@/utils/auth'
 import type { LoginPayload, RegisterPayload } from '@/types/user'
@@ -245,6 +248,20 @@ const activeTab = ref<'login' | 'register'>('login')
 const loginLoading = ref(false)
 const registerLoading = ref(false)
 const rememberPassword = ref(false)
+
+const loginLimit = useRateLimitCountdown(RATE_LIMIT_KEYS.login)
+const registerLimit = useRateLimitCountdown(RATE_LIMIT_KEYS.register)
+const captchaLimit = useRateLimitCountdown(RATE_LIMIT_KEYS.verificationCode)
+
+const captchaButtonText = computed(() =>
+  captchaLimit.isLimited.value ? `请稍候 ${captchaLimit.remainingSeconds.value}s` : '看不清？点击刷新'
+)
+const loginButtonText = computed(() =>
+  loginLimit.isLimited.value ? `请稍候 ${loginLimit.remainingSeconds.value}s` : '登 录'
+)
+const registerButtonText = computed(() =>
+  registerLimit.isLimited.value ? `请稍候 ${registerLimit.remainingSeconds.value}s` : '注 册'
+)
 
 const loginFormRef = ref<InstanceType<typeof ElForm>>()
 const registerFormRef = ref<InstanceType<typeof ElForm>>()
@@ -346,6 +363,8 @@ const registerRules = {
 async function loadVerificationCode(target: 'login' | 'register') {
   const captcha = target === 'login' ? loginCaptcha : registerCaptcha
   const form = target === 'login' ? loginForm : registerForm
+  if (captchaLimit.isLimited.value) return
+
   captcha.loading = true
   try {
     const response = await getVerificationCode()
@@ -361,6 +380,8 @@ async function loadVerificationCode(target: 'login' | 'register') {
 
 async function handleLogin() {
   if (!loginFormRef.value) return
+  if (loginLimit.isLimited.value) return
+
   try {
     await loginFormRef.value.validate()
   } catch { return }
@@ -396,6 +417,8 @@ async function handleLogin() {
 
 async function handleRegister() {
   if (!registerFormRef.value) return
+  if (registerLimit.isLimited.value) return
+
   try {
     await registerFormRef.value.validate()
   } catch { return }

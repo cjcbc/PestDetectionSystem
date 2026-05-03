@@ -1,4 +1,6 @@
 import request, { handleAuthExpired } from './request'
+import { RATE_LIMIT_KEYS, RATE_LIMIT_SECONDS, setRateLimited } from '@/composables/useRateLimit'
+import { showWarning } from '@/utils/message'
 import type {
   ChatMessage,
   ChatQuota,
@@ -57,6 +59,19 @@ export async function sendMessageStream(
   if (!response.ok) {
     if (response.status === 401) {
       handleAuthExpired()
+      return
+    }
+    if (response.status === 429) {
+      const retryAfter = Number(response.headers.get('Retry-After'))
+      const seconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : RATE_LIMIT_SECONDS
+      const text = await response.text()
+      let message = `请求过于频繁，请 ${seconds} 秒后再试`
+      try {
+        const body = JSON.parse(text)
+        message = body?.message || message
+      } catch {}
+      setRateLimited(RATE_LIMIT_KEYS.chatStream, seconds)
+      showWarning(message)
       return
     }
     const text = await response.text()

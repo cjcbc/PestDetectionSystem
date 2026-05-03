@@ -1,6 +1,7 @@
 package com.gzy.pestdetectionsystem.config.common;
 
 import com.gzy.pestdetectionsystem.interceptor.CommonInterceptor;
+import com.gzy.pestdetectionsystem.interceptor.RateLimitInterceptor;
 import com.gzy.pestdetectionsystem.mapper.user.UserMapper;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final RedisUtil redisUtil;
     private final UserMapper userMapper;
+    private final RateLimitInterceptor rateLimitInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 注意：拦截器在 context-path (/api) 处理后，所以这里的路径不包含 /api 前缀
-        
+
         // 管理员拦截器（角色0）- 拦截 /admin 路径
         registry.addInterceptor(new CommonInterceptor(Set.of(0), redisUtil, userMapper))
                 .addPathPatterns("/admin/**")
@@ -35,6 +37,9 @@ public class WebConfig implements WebMvcConfigurer {
                         "/user/login",
                         "/user/register"
                 );
+
+        registry.addInterceptor(rateLimitInterceptor)
+                .addPathPatterns("/**");
     }
 
     @Override

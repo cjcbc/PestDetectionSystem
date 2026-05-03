@@ -4,6 +4,7 @@ import { ElMessageBox } from 'element-plus'
 import { useAppStore } from '@/stores/app'
 import { showError, showWarning } from '@/utils/message'
 import router from '@/router'
+import { normalizeRateLimitKey, RATE_LIMIT_SECONDS, setRateLimited } from '@/composables/useRateLimit'
 
 let isHandling401 = false
 
@@ -23,6 +24,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888
 
 // 调试：打印实际的 baseURL
 console.log('[API] 当前 baseURL:', API_BASE_URL)
+
+function getRetryAfterSeconds(value: unknown): number {
+  const retryAfter = Number(value)
+  return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : RATE_LIMIT_SECONDS
+}
 
 export function handleAuthExpired() {
   if (isHandling401) return
@@ -106,6 +112,13 @@ service.interceptors.response.use(
           showError(message || '请求地址不存在')
           markMessageHandled(error)
           break
+        case 429: {
+          const seconds = getRetryAfterSeconds(error.response.headers?.['retry-after'])
+          setRateLimited(normalizeRateLimitKey(error.config?.url), seconds)
+          showWarning(message || `请求过于频繁，请 ${seconds} 秒后再试`)
+          markMessageHandled(error)
+          break
+        }
         case 500:
           showError(message || '服务器错误，请稍后重试')
           markMessageHandled(error)

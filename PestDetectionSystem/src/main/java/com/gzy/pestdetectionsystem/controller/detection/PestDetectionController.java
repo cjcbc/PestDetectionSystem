@@ -1,5 +1,6 @@
 package com.gzy.pestdetectionsystem.controller.detection;
 
+import com.gzy.pestdetectionsystem.annotation.RateLimit;
 import com.gzy.pestdetectionsystem.dto.detection.PestDetectionDTO;
 import com.gzy.pestdetectionsystem.service.detection.PestDetectionService;
 import com.gzy.pestdetectionsystem.utils.Result;
@@ -21,6 +22,7 @@ public class PestDetectionController {
      * 病虫害检测
      * POST /api/detect
      */
+    @RateLimit
     @PostMapping
     public Result<PestDetectionVO> detect(@RequestBody PestDetectionDTO dto,
                                          HttpServletRequest request) {
