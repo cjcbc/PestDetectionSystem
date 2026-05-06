@@ -13,6 +13,9 @@ public class RegisterDTO {
 
     private String password;
 
+    @Schema(description = "SM2加密的密码（base64），与password二选一，优先用encryptedPassword")
+    private String encryptedPassword;
+
 
     //邮件手机号至少选一
     @ContactCheck(type = VerifyType.PHONE, required = false, message = "手机号格式错误")

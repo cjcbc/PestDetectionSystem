@@ -13,6 +13,7 @@ import com.gzy.pestdetectionsystem.service.user.UserService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;
+import com.gzy.pestdetectionsystem.utils.Sm2KeyManager;
 import com.gzy.pestdetectionsystem.vo.user.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +25,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final UserProperties userProperties;
     private final RedisUtil redisUtil;
     private final UserAssembler userAssembler;
+    private final Sm2KeyManager sm2KeyManager;
 
     private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
     private static final String USER_PROFILE_CACHE_KEY_PREFIX = "user:profile";
@@ -48,11 +52,12 @@ public class UserServiceImpl implements UserService {
         this.self = self;
     }
 
-    public UserServiceImpl(UserMapper userMapper, UserProperties userProperties, RedisUtil redisUtil, UserAssembler userAssembler) {
+    public UserServiceImpl(UserMapper userMapper, UserProperties userProperties, RedisUtil redisUtil, UserAssembler userAssembler, Sm2KeyManager sm2KeyManager) {
         this.userMapper = userMapper;
         this.userProperties = userProperties;
         this.redisUtil = redisUtil;
         this.userAssembler = userAssembler;
+        this.sm2KeyManager = sm2KeyManager;
     }
 
     public List<UserVO> getAllUsers() {
@@ -203,24 +208,43 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
         }
 
-        // 验证原密码
-        if (!PasswordUtil.verifyPassword(dto.getOldPassword(), user.getSalt(), user.getPassword())) {
+        // 解密前端传来的SM2加密密码（旧密码）
+        String plaintextOldPassword;
+        if (dto.getOldPassword() != null && dto.getOldPassword().length() > 50) {
+            // 认为是SM2加密的base64字符串
+            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getOldPassword()));
+            plaintextOldPassword = new String(decrypted, StandardCharsets.UTF_8);
+        } else {
+            plaintextOldPassword = dto.getOldPassword();
+        }
+
+        // 验证旧密码（数据库里存的是SM3）
+        if (!PasswordUtil.verifyPasswordSm3(plaintextOldPassword, user.getSalt(), user.getPassword())) {
             throw new BusinessException(CommonErrorCode.CHANGE_PASSWORD_OLD_PASSWORD_WRONG);
         }
 
+        // 解密前端传来的SM2加密密码（新密码）
+        String plaintextNewPassword;
+        if (dto.getNewPassword() != null && dto.getNewPassword().length() > 50) {
+            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getNewPassword()));
+            plaintextNewPassword = new String(decrypted, StandardCharsets.UTF_8);
+        } else {
+            plaintextNewPassword = dto.getNewPassword();
+        }
+
         // 检查新密码是否与原密码相同
-        if (PasswordUtil.verifyPassword(dto.getNewPassword(), user.getSalt(), user.getPassword())) {
+        if (PasswordUtil.verifyPasswordSm3(plaintextNewPassword, user.getSalt(), user.getPassword())) {
             throw new BusinessException(CommonErrorCode.CHANGE_PASSWORD_SAME_AS_OLD);
         }
 
         // 检查两次输入的新密码是否一致
-        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+        if (!plaintextNewPassword.equals(dto.getConfirmPassword())) {
             throw new BusinessException(CommonErrorCode.CHANGE_PASSWORD_NOT_MATCH);
         }
 
-        // 生成新的盐值和加密密码
+        // 生成新的盐值和加密密码（SM3）
         String newSalt = PasswordUtil.generateSalt();
-        String newEncryptedPassword = PasswordUtil.encryptPassword(dto.getNewPassword(), newSalt);
+        String newEncryptedPassword = PasswordUtil.encryptPasswordSm3(plaintextNewPassword, newSalt);
 
         // 更新数据库
         user.setSalt(newSalt);

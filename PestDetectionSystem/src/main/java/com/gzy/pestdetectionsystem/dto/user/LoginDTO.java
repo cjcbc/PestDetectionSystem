@@ -11,6 +11,9 @@ public class LoginDTO {
 
     private String password;
 
+    @Schema(description = "SM2加密的密码（base64），与password二选一，优先用encryptedPassword")
+    private String encryptedPassword;
+
     private String verificationCodeId;
 
     private String verificationCode;

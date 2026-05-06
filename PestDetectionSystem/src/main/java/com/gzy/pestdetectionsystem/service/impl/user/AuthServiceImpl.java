@@ -13,11 +13,14 @@ import com.gzy.pestdetectionsystem.service.user.UserService;
 import com.gzy.pestdetectionsystem.service.user.VerificationCodeService;
 import com.gzy.pestdetectionsystem.utils.JwtUtil;
 import com.gzy.pestdetectionsystem.utils.PasswordUtil;
+import com.gzy.pestdetectionsystem.utils.Sm2KeyManager;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
 import com.gzy.pestdetectionsystem.vo.user.UserVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Objects;
 
 @Service
@@ -28,12 +31,14 @@ public class AuthServiceImpl implements AuthService {
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final UserService userService;
     private final VerificationCodeService verificationCodeService;
+    private final Sm2KeyManager sm2KeyManager;
 
-    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService, VerificationCodeService verificationCodeService) {
+    public AuthServiceImpl(UserMapper userMapper, SnowflakeIdGenerator snowflakeIdGenerator, UserService userService, VerificationCodeService verificationCodeService, Sm2KeyManager sm2KeyManager) {
         this.userMapper = userMapper;
         this.snowflakeIdGenerator = snowflakeIdGenerator;
         this.userService = userService;
         this.verificationCodeService = verificationCodeService;
+        this.sm2KeyManager = sm2KeyManager;
     }
 
     public void register(RegisterDTO dto) {
@@ -59,8 +64,17 @@ public class AuthServiceImpl implements AuthService {
             if (existingEmail != null) throw new BusinessException(CommonErrorCode.REGISTER_EMAIL_EXISTS);
         }
 
+        //解密前端传来的SM2加密密码
+        String plaintextPassword;
+        if (dto.getEncryptedPassword() != null && !dto.getEncryptedPassword().isBlank()) {
+            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getEncryptedPassword()));
+            plaintextPassword = new String(decrypted, StandardCharsets.UTF_8);
+        } else {
+            plaintextPassword = dto.getPassword(); // 兼容旧调用
+        }
+
         String salt = PasswordUtil.generateSalt();
-        String encrypted = PasswordUtil.encryptPassword(dto.getPassword(), salt);
+        String encrypted = PasswordUtil.encryptPasswordSm3(plaintextPassword, salt); // 用SM3存储
 
         Long id = snowflakeIdGenerator.nextId();
         String username = dto.getUsername();
@@ -100,7 +114,17 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() != 1) {
             throw new BusinessException(CommonErrorCode.USER_BANNED);
         }
-        if (!PasswordUtil.verifyPassword(dto.getPassword(), user.getSalt(), user.getPassword())) {
+
+        //解密前端传来的SM2加密密码
+        String plaintextPassword;
+        if (dto.getEncryptedPassword() != null && !dto.getEncryptedPassword().isBlank()) {
+            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getEncryptedPassword()));
+            plaintextPassword = new String(decrypted, StandardCharsets.UTF_8);
+        } else {
+            plaintextPassword = dto.getPassword(); // 兼容旧调用
+        }
+
+        if (!PasswordUtil.verifyPasswordSm3(plaintextPassword, user.getSalt(), user.getPassword())) {
             throw new BusinessException(CommonErrorCode.LOGIN_PASSWORD_ERROR);
         }
         log.debug("用户密码校验通过，userId={}", user.getId());
