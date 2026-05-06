@@ -235,6 +235,7 @@ import { useAppStore } from '@/stores/app'
 import { RATE_LIMIT_KEYS, useRateLimitCountdown } from '@/composables/useRateLimit'
 import { isValidEmail, isValidPhone, isValidUsername } from '@/utils/validators'
 import { clearRememberedLogin, getRememberedLogin, setRememberedLogin } from '@/utils/auth'
+import { sm2EncryptPassword } from '@/utils/sm2'
 import type { LoginPayload, RegisterPayload } from '@/types/user'
 
 const router = useRouter()
@@ -389,7 +390,7 @@ async function handleLogin() {
   try {
     const payload: LoginPayload = {
       account: loginForm.account,
-      password: loginForm.password,
+      encryptedPassword: await sm2EncryptPassword(loginForm.password),
       verificationCodeId: loginForm.verificationCodeId,
       verificationCode: loginForm.verificationCode
     }
@@ -426,7 +427,7 @@ async function handleRegister() {
   try {
     const payload: RegisterPayload = {
       username: registerForm.username || undefined,
-      password: registerForm.password,
+      encryptedPassword: await sm2EncryptPassword(registerForm.password),
       email: registerForm.email,
       phone: registerForm.phone || undefined,
       verificationCodeId: registerForm.verificationCodeId,

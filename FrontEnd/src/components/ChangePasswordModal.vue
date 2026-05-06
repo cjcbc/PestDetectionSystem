@@ -56,6 +56,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { changeUserPassword, changeAdminPassword } from '@/api/user'
+import { sm2EncryptPassword } from '@/utils/sm2'
 import { isMessageHandled } from '@/api/request'
 import type { ChangePasswordPayload } from '@/types/user'
 
@@ -130,8 +131,8 @@ const handleSubmit = async () => {
     
     loading.value = true
     const payload: ChangePasswordPayload = {
-      oldPassword: form.oldPassword,
-      newPassword: form.newPassword,
+      oldPassword: await sm2EncryptPassword(form.oldPassword),
+      newPassword: await sm2EncryptPassword(form.newPassword),
       confirmPassword: form.confirmPassword
     }
 

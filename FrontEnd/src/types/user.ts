@@ -2,7 +2,7 @@
 
 export interface LoginPayload {
   account: string  // 邮箱或手机号
-  password: string
+  encryptedPassword: string  // SM2加密后的base64密码
   verificationCodeId: string
   verificationCode: string
 }
@@ -22,7 +22,7 @@ export interface LoginResponse {
 
 export interface RegisterPayload {
   username?: string
-  password: string
+  encryptedPassword: string  // SM2加密后的base64密码
   email?: string
   phone?: string
   verificationCodeId: string

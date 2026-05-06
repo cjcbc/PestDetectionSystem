@@ -155,6 +155,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getVerificationCode, register } from '@/api/user'
+import { sm2EncryptPassword } from '@/utils/sm2'
 import { isMessageHandled } from '@/api/request'
 
 const router = useRouter()
@@ -249,7 +250,7 @@ async function handleRegister() {
   try {
     await register({
       username: form.username,
-      password: form.password,
+      encryptedPassword: await sm2EncryptPassword(form.password),
       email: form.email,
       phone: form.phone,
       verificationCodeId: form.verificationCodeId,
