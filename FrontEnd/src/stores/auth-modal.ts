@@ -1,3 +1,7 @@
+/**
+ * @deprecated 此 store 随 AuthModal 组件一同弃用。
+ * 登录/注册请使用 /login 路由页面（views/Login.vue）。
+ */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 

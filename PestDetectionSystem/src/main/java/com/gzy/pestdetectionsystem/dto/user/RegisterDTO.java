@@ -11,9 +11,7 @@ public class RegisterDTO {
 
     private String username;
 
-    private String password;
-
-    @Schema(description = "SM2加密的密码（base64），与password二选一，优先用encryptedPassword")
+    @Schema(description = "SM2加密的密码（base64）")
     private String encryptedPassword;
 
 

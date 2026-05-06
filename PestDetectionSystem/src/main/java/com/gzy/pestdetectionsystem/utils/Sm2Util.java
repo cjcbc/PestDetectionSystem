@@ -57,7 +57,7 @@ public class Sm2Util {
             byte[] cipherData = Base64.decode(ciphertextBase64);
 
             SM2Engine engine = new SM2Engine();
-            engine.init(false, new ECPrivateKeyParameters(privateKey, domainParams));
+            engine.init(false, privateKey);
 
             byte[] decrypted = engine.processBlock(cipherData, 0, cipherData.length);
             return new String(decrypted, StandardCharsets.UTF_8);

@@ -101,7 +101,7 @@
             <template #default="{ row }">
               <el-select
                 :model-value="row.role"
-                @change="(val) => handleChangeRole(row, val)"
+                @change="(val: 0 | 1) => handleChangeRole(row, val)"
                 size="small"
               >
                 <el-option label="管理员" :value="0"></el-option>
@@ -130,7 +130,7 @@
             prop="createdTime"
             label="注册时间"
             width="180"
-            :formatter="(row) => formatTime(row.createdTime)"
+            :formatter="(row: AdminUser) => formatTime(row.createdTime)"
             sortable
           />
 

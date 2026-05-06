@@ -28,14 +28,16 @@ public class UserController {
     private final Sm2KeyManager sm2KeyManager;
 
     @RateLimit
-    @GetMapping("/verification-code")
+    @GetMapping("/captcha")
     public Result<VerificationCodeVO> verificationCode() {
+        System.out.println("a");
         return Result.ok(verificationCodeService.create());
     }
 
     @RateLimit
     @PostMapping("/login")
     public Result<UserVO> login(@RequestBody LoginDTO dto) {
+        System.out.println(dto);
         return Result.ok(authService.login(dto));
     }
 
@@ -97,9 +99,10 @@ public class UserController {
      * 获取SM2公钥（用于前端加密密码）
      * 无需登录即可访问
      */
+    @RateLimit
     @GetMapping("/sm2-public-key")
     public Result<String> getSm2PublicKey() {
-        return Result.ok(sm2KeyManager.getPublicKeyHex());
+        return new Result<>(200, "success", sm2KeyManager.getPublicKeyHex());
     }
 
 }

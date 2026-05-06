@@ -6,9 +6,11 @@ import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ContactFormatValidationTest {
@@ -23,7 +25,7 @@ class ContactFormatValidationTest {
     @Test
     void registerShouldRejectInvalidEmail() {
         RegisterDTO dto = new RegisterDTO();
-        dto.setPassword("123456");
+        dto.setEncryptedPassword("encrypted-password");
         dto.setEmail("bad-email");
 
         Set<ConstraintViolation<RegisterDTO>> violations = validator.validate(dto);
@@ -35,7 +37,7 @@ class ContactFormatValidationTest {
     @Test
     void registerShouldRejectInvalidPhone() {
         RegisterDTO dto = new RegisterDTO();
-        dto.setPassword("123456");
+        dto.setEncryptedPassword("encrypted-password");
         dto.setPhone("12345");
 
         Set<ConstraintViolation<RegisterDTO>> violations = validator.validate(dto);
@@ -47,7 +49,7 @@ class ContactFormatValidationTest {
     @Test
     void registerShouldAcceptValidEmailAndPhone() {
         RegisterDTO dto = new RegisterDTO();
-        dto.setPassword("123456");
+        dto.setEncryptedPassword("encrypted-password");
         dto.setEmail("test@example.com");
         dto.setPhone("13812345678");
 
@@ -90,5 +92,16 @@ class ContactFormatValidationTest {
 
         assertEquals(1, violations.size());
         assertTrue(violations.iterator().next().getMessage().contains("手机号"));
+    }
+
+    @Test
+    void authDtosShouldNotExposePlaintextPasswordField() {
+        assertFalse(hasField(LoginDTO.class, "password"));
+        assertFalse(hasField(RegisterDTO.class, "password"));
+    }
+
+    private boolean hasField(Class<?> type, String name) {
+        return Arrays.stream(type.getDeclaredFields())
+                .anyMatch(field -> field.getName().equals(name));
     }
 }

@@ -1,4 +1,8 @@
 <template>
+  <!--
+    @deprecated 此组件已弃用，不再作为登录/注册入口。
+    请使用 /login 路由页面（views/Login.vue）替代。
+  -->
   <el-dialog
     v-model="visible"
     :title="activeTab === 'login' ? '登 录' : '注 册'"
@@ -96,12 +100,12 @@
           <el-form-item label="邮箱" prop="email">
             <el-input
               v-model="registerForm.email"
-              placeholder="请输入邮箱"
+              placeholder="邮箱和手机号至少填写一个"
               clearable
             />
           </el-form-item>
 
-          <el-form-item label="手机号（可选）" prop="phone">
+          <el-form-item label="手机号" prop="phone">
             <el-input
               v-model="registerForm.phone"
               placeholder="11位手机号"
@@ -306,11 +310,6 @@ const registerRules = {
   ],
   email: [
     {
-      required: true,
-      message: '邮箱不能为空',
-      trigger: 'blur'
-    },
-    {
       validator: (_rule: any, value: string, callback: any) => {
         if (value && !isValidEmail(value)) {
           callback(new Error('邮箱格式不正确'))
@@ -402,21 +401,38 @@ async function loadVerificationCode(target: 'login' | 'register') {
 }
 
 async function handleLogin() {
+  console.log('[LoginDebug][Modal] handleLogin clicked', {
+    hasFormRef: Boolean(loginFormRef.value),
+    isLimited: loginLimit.isLimited.value,
+    account: loginForm.account,
+    hasPassword: Boolean(loginForm.password),
+    verificationCodeId: loginForm.verificationCodeId,
+    verificationCode: loginForm.verificationCode
+  })
   if (!loginFormRef.value) return
   if (loginLimit.isLimited.value) return
 
   try {
+    console.log('[LoginDebug][Modal] validating login form')
     await loginFormRef.value.validate()
+    console.log('[LoginDebug][Modal] login form validated')
 
     isLoading.value = true
+    console.log('[LoginDebug][Modal] preparing login payload')
+    const encryptedPassword = await sm2EncryptPassword(loginForm.password)
     const payload: LoginPayload = {
       account: loginForm.account,
-      encryptedPassword: await sm2EncryptPassword(loginForm.password),
+      encryptedPassword,
       verificationCodeId: loginForm.verificationCodeId,
       verificationCode: loginForm.verificationCode
     }
 
+    console.log('[LoginDebug][Modal] login payload ready')
     const response = await login(payload)
+    console.log('[LoginDebug][Modal] login request resolved', {
+      userId: response?.id,
+      hasToken: Boolean(response?.token)
+    })
     appStore.setUser(response, response.token)
     if (rememberPassword.value) {
       setRememberedLogin({ account: loginForm.account, password: loginForm.password })
@@ -430,9 +446,11 @@ async function handleLogin() {
 
     // 重置表单
     resetLoginForm()
-  } catch {
+  } catch (error) {
+    console.error('[LoginDebug][Modal] handleLogin failed', error)
     await loadVerificationCode('login')
   } finally {
+    console.log('[LoginDebug][Modal] handleLogin finished')
     isLoading.value = false
   }
 }
@@ -441,6 +459,11 @@ async function handleRegister() {
   if (!registerFormRef.value) return
   if (registerLimit.isLimited.value) return
 
+  if (!registerForm.email.trim() && !registerForm.phone.trim()) {
+    ElMessage.warning('请至少填写邮箱或手机号')
+    return
+  }
+
   try {
     await registerFormRef.value.validate()
 
@@ -448,7 +471,7 @@ async function handleRegister() {
     const payload: RegisterPayload = {
       username: registerForm.username || undefined,
       encryptedPassword: await sm2EncryptPassword(registerForm.password),
-      email: registerForm.email,
+      email: registerForm.email || undefined,
       phone: registerForm.phone || undefined,
       verificationCodeId: registerForm.verificationCodeId,
       verificationCode: registerForm.verificationCode
@@ -456,14 +479,14 @@ async function handleRegister() {
 
     await register(payload)
     ElMessage.success('注册成功，请登录')
-    const registeredEmail = registerForm.email
+    const registeredContact = registerForm.email || registerForm.phone
 
     // 切换到登录标签
     activeTab.value = 'login'
     resetRegisterForm()
 
-    // 自动填入邮箱
-    loginForm.account = registeredEmail
+    // 自动填入联系方式
+    loginForm.account = registeredContact
     await loadVerificationCode('login')
   } catch {
     await loadVerificationCode('register')

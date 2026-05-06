@@ -64,14 +64,8 @@ public class AuthServiceImpl implements AuthService {
             if (existingEmail != null) throw new BusinessException(CommonErrorCode.REGISTER_EMAIL_EXISTS);
         }
 
-        //解密前端传来的SM2加密密码
-        String plaintextPassword;
-        if (dto.getEncryptedPassword() != null && !dto.getEncryptedPassword().isBlank()) {
-            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getEncryptedPassword()));
-            plaintextPassword = new String(decrypted, StandardCharsets.UTF_8);
-        } else {
-            plaintextPassword = dto.getPassword(); // 兼容旧调用
-        }
+        byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getEncryptedPassword()));
+        String plaintextPassword = new String(decrypted, StandardCharsets.UTF_8);
 
         String salt = PasswordUtil.generateSalt();
         String encrypted = PasswordUtil.encryptPasswordSm3(plaintextPassword, salt); // 用SM3存储
@@ -115,14 +109,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(CommonErrorCode.USER_BANNED);
         }
 
-        //解密前端传来的SM2加密密码
-        String plaintextPassword;
-        if (dto.getEncryptedPassword() != null && !dto.getEncryptedPassword().isBlank()) {
-            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getEncryptedPassword()));
-            plaintextPassword = new String(decrypted, StandardCharsets.UTF_8);
-        } else {
-            plaintextPassword = dto.getPassword(); // 兼容旧调用
-        }
+        byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getEncryptedPassword()));
+        String plaintextPassword = new String(decrypted, StandardCharsets.UTF_8);
 
         if (!PasswordUtil.verifyPasswordSm3(plaintextPassword, user.getSalt(), user.getPassword())) {
             throw new BusinessException(CommonErrorCode.LOGIN_PASSWORD_ERROR);

@@ -6,6 +6,7 @@ import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.user.UserMapper;
 import com.gzy.pestdetectionsystem.service.impl.user.AuthServiceImpl;
+import com.gzy.pestdetectionsystem.utils.Sm2KeyManager;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
 import org.junit.jupiter.api.Test;
 
@@ -20,18 +21,20 @@ class AuthServiceCaptchaValidationTest {
     private final SnowflakeIdGenerator snowflakeIdGenerator = mock(SnowflakeIdGenerator.class);
     private final UserService userService = mock(UserService.class);
     private final VerificationCodeService verificationCodeService = mock(VerificationCodeService.class);
+    private final Sm2KeyManager sm2KeyManager = mock(Sm2KeyManager.class);
     private final AuthServiceImpl authService = new AuthServiceImpl(
             userMapper,
             snowflakeIdGenerator,
             userService,
-            verificationCodeService
+            verificationCodeService,
+            sm2KeyManager
     );
 
     @Test
     void loginShouldValidateCaptchaBeforeLoadingUser() {
         LoginDTO dto = new LoginDTO();
         dto.setAccount("test@example.com");
-        dto.setPassword("123456");
+        dto.setEncryptedPassword("encrypted-password");
         dto.setVerificationCodeId("captcha-id");
         dto.setVerificationCode("bad");
         doThrow(new BusinessException(CommonErrorCode.VERIFICATION_CODE_INVALID))
@@ -48,7 +51,7 @@ class AuthServiceCaptchaValidationTest {
     void registerShouldValidateCaptchaBeforeAccountChecks() {
         RegisterDTO dto = new RegisterDTO();
         dto.setEmail("test@example.com");
-        dto.setPassword("123456");
+        dto.setEncryptedPassword("encrypted-password");
         dto.setVerificationCodeId("captcha-id");
         dto.setVerificationCode("bad");
         doThrow(new BusinessException(CommonErrorCode.VERIFICATION_CODE_INVALID))

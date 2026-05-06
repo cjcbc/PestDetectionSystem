@@ -23,3 +23,5 @@ pnpm-debug.log*
 # 忽略环境变量文件（可选）
 .env.local
 .env.*.local
+
+.npm-cache

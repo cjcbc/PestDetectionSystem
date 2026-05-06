@@ -5,13 +5,19 @@ import type { LoginPayload, LoginResponse, RegisterPayload, RegisterResponse, Us
  * 获取登录/注册验证码
  */
 export function getVerificationCode(): Promise<VerificationCodeResponse> {
-  return request.get('/user/verification-code')
+  return request.get('/user/captcha')
 }
 
 /**
  * 用户登录
  */
 export function login(payload: LoginPayload): Promise<LoginResponse> {
+  console.log('[LoginDebug][API] POST /user/login', {
+    account: payload.account,
+    verificationCodeId: payload.verificationCodeId,
+    verificationCodeLength: payload.verificationCode?.length ?? 0,
+    encryptedPasswordLength: payload.encryptedPassword?.length ?? 0
+  })
   return request.post('/user/login', payload)
 }
 

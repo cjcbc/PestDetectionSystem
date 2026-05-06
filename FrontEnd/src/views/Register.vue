@@ -58,14 +58,14 @@
           <el-form-item label="邮箱" prop="email">
             <el-input
               v-model="form.email"
-              placeholder="请输入邮箱"
+              placeholder="邮箱和手机号至少填写一个"
               type="email"
               clearable
               size="large"
             />
           </el-form-item>
 
-          <el-form-item label="手机号（可选）" prop="phone">
+          <el-form-item label="手机号" prop="phone">
             <el-input
               v-model="form.phone"
               placeholder="11位手机号"
@@ -207,11 +207,19 @@ const rules: FormRules = {
     { min: 3, max: 20, message: '用户名长度需在 3 到 20 个字符之间', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
   phone: [
-    { required: false, trigger: 'blur' }
+    {
+      validator: (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+        if (value && !/^1[3-9]\d{9}$/.test(value)) {
+          callback(new Error('手机号格式不正确'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ],
   password: [
     { validator: validatePassword, trigger: 'blur' }
@@ -243,6 +251,11 @@ async function loadVerificationCode() {
 async function handleRegister() {
   if (!formRef.value) return
 
+  if (!form.email.trim() && !form.phone.trim()) {
+    ElMessage.warning('请至少填写邮箱或手机号')
+    return
+  }
+
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
@@ -251,8 +264,8 @@ async function handleRegister() {
     await register({
       username: form.username,
       encryptedPassword: await sm2EncryptPassword(form.password),
-      email: form.email,
-      phone: form.phone,
+      email: form.email || undefined,
+      phone: form.phone || undefined,
       verificationCodeId: form.verificationCodeId,
       verificationCode: form.verificationCode
     })

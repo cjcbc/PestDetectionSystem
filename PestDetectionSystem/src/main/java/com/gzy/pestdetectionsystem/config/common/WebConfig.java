@@ -39,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(new CommonInterceptor(Set.of(0, 1), redisUtil, userMapper))
                 .addPathPatterns("/user/**", "/detect/**", "/chat/**")
                 .excludePathPatterns(
-                        "/user/verification-code",
+                        "/user/captcha",
                         "/user/login",
                         "/user/register",
                         "/user/sm2-public-key"

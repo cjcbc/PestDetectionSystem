@@ -9,9 +9,7 @@ public class LoginDTO {
 
     private String account;
 
-    private String password;
-
-    @Schema(description = "SM2加密的密码（base64），与password二选一，优先用encryptedPassword")
+    @Schema(description = "SM2加密的密码（base64）")
     private String encryptedPassword;
 
     private String verificationCodeId;

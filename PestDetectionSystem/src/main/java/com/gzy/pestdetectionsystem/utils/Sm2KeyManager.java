@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -17,6 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SM2密钥对生成与管理
@@ -74,8 +77,9 @@ public class Sm2KeyManager {
             // 读取公钥
             byte[] publicKeyBytes;
             try (DataInputStream disPub = new DataInputStream(new FileInputStream(publicKeyPath.toFile()))) {
-                publicKeyBytes = new byte[64];
-                disPub.readFully(publicKeyBytes);
+                publicKeyBytes = new byte[65];
+                publicKeyBytes[0] = 0x04;
+                disPub.readFully(publicKeyBytes, 1, 64);
             }
             ECPublicKeyParameters publicKeyParams = new ECPublicKeyParameters(
                     domainParams.getCurve().decodePoint(publicKeyBytes), domainParams);
@@ -146,15 +150,39 @@ public class Sm2KeyManager {
      * @return 解密后的明文
      */
     public byte[] decrypt(byte[] cipherData) {
-        try {
-            org.bouncycastle.crypto.engines.SM2Engine engine = new org.bouncycastle.crypto.engines.SM2Engine();
-            engine.init(false, new ECPrivateKeyParameters(
-                    (ECPrivateKeyParameters) keyPair.getPrivate(),
-                    domainParams));
-            return engine.processBlock(cipherData, 0, cipherData.length);
-        } catch (Exception e) {
-            throw new RuntimeException("SM2解密失败", e);
+        List<byte[]> candidates = buildCipherCandidates(cipherData);
+        RuntimeException lastFailure = null;
+
+        for (byte[] candidate : candidates) {
+            for (SM2Engine.Mode mode : new SM2Engine.Mode[]{SM2Engine.Mode.C1C3C2, SM2Engine.Mode.C1C2C3}) {
+                try {
+                    SM2Engine engine = new SM2Engine(mode);
+                    engine.init(false, (ECPrivateKeyParameters) keyPair.getPrivate());
+                    return engine.processBlock(candidate, 0, candidate.length);
+                } catch (Exception e) {
+                    lastFailure = new RuntimeException("SM2解密失败", e);
+                }
+            }
         }
+
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
+        throw new RuntimeException("SM2解密失败");
+    }
+
+    private List<byte[]> buildCipherCandidates(byte[] cipherData) {
+        List<byte[]> candidates = new ArrayList<>();
+        candidates.add(cipherData);
+
+        if (cipherData.length > 0 && cipherData[0] != 0x04) {
+            byte[] prefixedCipherData = new byte[cipherData.length + 1];
+            System.arraycopy(cipherData, 0, prefixedCipherData, 1, cipherData.length);
+            prefixedCipherData[0] = 0x04;
+            candidates.add(prefixedCipherData);
+        }
+
+        return candidates;
     }
 
     /**
