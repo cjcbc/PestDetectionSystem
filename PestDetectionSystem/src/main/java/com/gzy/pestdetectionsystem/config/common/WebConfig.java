@@ -5,11 +5,14 @@ import com.gzy.pestdetectionsystem.interceptor.RateLimitInterceptor;
 import com.gzy.pestdetectionsystem.mapper.user.UserMapper;
 import com.gzy.pestdetectionsystem.utils.RedisUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 
 @Configuration
@@ -19,6 +22,9 @@ public class WebConfig implements WebMvcConfigurer {
     private final RedisUtil redisUtil;
     private final UserMapper userMapper;
     private final RateLimitInterceptor rateLimitInterceptor;
+
+    @Value("${user.base-path:./images}")
+    private String pestImagesPath;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -46,8 +52,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 配置 pest-images 目录的静态资源映射
         // 访问路径：/images/filename.jpg
-        // 实际路径：D:\SHU files\Graduation project\PestDetectionSystem\pest-images\filename.jpg
+        // 实际路径：${PEST_IMAGES_PATH} 下的 pest-images 子目录
+        String resourceLocation = "file:" + pestImagesPath + "/pest-images/";
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:D:/SHU files/Graduation project/PestDetectionSystem/pest-images/");
+                .addResourceLocations(resourceLocation);
     }
 }

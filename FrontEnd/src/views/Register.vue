@@ -44,7 +44,6 @@
           :model="form"
           :rules="rules"
           label-position="top"
-          @keyup.enter="handleRegister"
         >
           <el-form-item label="用户名" prop="username">
             <el-input
@@ -156,6 +155,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getVerificationCode, register } from '@/api/user'
+import { isMessageHandled } from '@/api/request'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -230,8 +230,10 @@ async function loadVerificationCode() {
     form.verificationCodeId = response.verificationCodeId
     form.verificationCode = ''
     captcha.image = response.image
-  } catch {
-    ElMessage.error('验证码加载失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('验证码加载失败')
+    }
   } finally {
     captcha.loading = false
   }

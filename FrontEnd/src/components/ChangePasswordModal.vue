@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { changeUserPassword, changeAdminPassword } from '@/api/user'
@@ -109,10 +109,13 @@ const rules = {
   ]
 }
 
-const visible = ref(false)
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
 
 const handleClose = () => {
-  emit('update:modelValue', false)
+  visible.value = false
   formRef.value?.clearValidate()
   form.oldPassword = ''
   form.newPassword = ''
@@ -138,7 +141,6 @@ const handleSubmit = async () => {
       await changeUserPassword(payload)
     }
 
-    ElMessage.success('密码修改成功')
     emit('success')
     handleClose()
   } catch (error: any) {
@@ -157,19 +159,13 @@ const handleSubmit = async () => {
   }
 }
 
-// 监听 props 中的 modelValue 变化
-import { watch } from 'vue'
+// 监听 props 中的 modelValue 变化（用于表单重置等）
 watch(
   () => props.modelValue,
   (newVal) => {
-    visible.value = newVal
+    if (newVal) {
+      formRef.value?.clearValidate()
+    }
   }
 )
-
-// 监听 visible 变化，同步到 props
-watch(visible, (newVal) => {
-  if (!newVal) {
-    handleClose()
-  }
-})
 </script>

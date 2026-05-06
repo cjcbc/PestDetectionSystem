@@ -4,6 +4,7 @@ Flask后端服务脚本
 """
 
 import base64
+import os
 from pathlib import Path
 
 import cv2
@@ -13,7 +14,7 @@ from flask import Flask, request, jsonify
 from predict_test import predict_image
 
 app = Flask(__name__)
-ANNOTATED_OUTPUT_DIR = Path(r"D:\SHU files\Graduation project\PestDetectionSystem\pest-images")
+ANNOTATED_OUTPUT_DIR = Path(os.environ.get("PEST_IMAGES_PATH", "./pest-images"))
 
 
 def _get_image_from_request():

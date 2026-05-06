@@ -47,7 +47,6 @@
               :model="loginForm"
               :rules="loginRules"
               label-position="top"
-              @keyup.enter="handleLogin"
             >
               <el-form-item label="邮箱或手机号" prop="account">
                 <el-input
@@ -55,7 +54,6 @@
                   placeholder="请输入邮箱或手机号"
                   clearable
                   size="large"
-                  @keyup.enter="handleLogin"
                 />
               </el-form-item>
 
@@ -67,7 +65,6 @@
                   show-password
                   clearable
                   size="large"
-                  @keyup.enter="handleLogin"
                 />
               </el-form-item>
 
@@ -126,7 +123,6 @@
               :model="registerForm"
               :rules="registerRules"
               label-position="top"
-              @keyup.enter="handleRegister"
             >
               <el-form-item label="用户名（可选）" prop="username">
                 <el-input
@@ -234,6 +230,7 @@ import { computed, onMounted, ref, reactive, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElForm } from 'element-plus'
 import { getVerificationCode, login, register } from '@/api/user'
+import { isMessageHandled } from '@/api/request'
 import { useAppStore } from '@/stores/app'
 import { RATE_LIMIT_KEYS, useRateLimitCountdown } from '@/composables/useRateLimit'
 import { isValidEmail, isValidPhone, isValidUsername } from '@/utils/validators'
@@ -371,8 +368,10 @@ async function loadVerificationCode(target: 'login' | 'register') {
     form.verificationCodeId = response.verificationCodeId
     form.verificationCode = ''
     captcha.image = response.image
-  } catch {
-    ElMessage.error('验证码加载失败')
+  } catch (error) {
+    if (!isMessageHandled(error)) {
+      ElMessage.error('验证码加载失败')
+    }
   } finally {
     captcha.loading = false
   }

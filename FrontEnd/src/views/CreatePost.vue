@@ -66,6 +66,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { createPost } from '@/api/forum'
+import { isMessageHandled } from '@/api/request'
 import type { CreatePostPayload } from '@/types/forum'
 
 const router = useRouter()
@@ -126,6 +127,9 @@ async function submit() {
     router.push(`/forum/post/${post.id}`)
   } catch (error) {
     console.error(error)
+    if (!isMessageHandled(error)) {
+      ElMessage.error('发布失败，请重试')
+    }
   } finally {
     submitting.value = false
   }

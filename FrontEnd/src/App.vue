@@ -179,6 +179,7 @@ import { useAppStore } from '@/stores/app'
 import { getUserRole } from '@/utils/auth'
 import { logout as userLogout } from '@/api/user'
 import { logout as adminLogout } from '@/api/admin'
+import { isMessageHandled } from '@/api/request'
 import { getUnreadWarningCount, getWarningList, markWarningRead } from '@/api/warning'
 import type { WarningItem } from '@/types/warning'
 
@@ -290,7 +291,9 @@ function handleLogout() {
         // 无需刷新，store 更新会自动触发 UI 响应
       } catch (error) {
         appStore.logout()
-        ElMessage.warning('退出登录处理中出现错误，已清除本地数据')
+        if (!isMessageHandled(error)) {
+          ElMessage.warning('退出登录处理中出现错误，已清除本地数据')
+        }
         router.push('/')
         // 无需刷新，store 更新会自动触发 UI 响应
       }
@@ -351,7 +354,9 @@ async function markAsRead(item: WarningItem) {
     item.readTime = Date.now()
     unreadCount.value = Math.max(unreadCount.value - 1, 0)
   } catch (error) {
-    ElMessage.error('标记已读失败，请稍后重试')
+    if (!isMessageHandled(error)) {
+      ElMessage.error('标记已读失败，请稍后重试')
+    }
   }
 }
 
