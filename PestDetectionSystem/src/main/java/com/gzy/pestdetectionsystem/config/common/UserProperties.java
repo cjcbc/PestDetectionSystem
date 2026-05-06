@@ -10,4 +10,5 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "user")
 public class UserProperties {
     private String basePath;
+    private String pestImagePath;
 }

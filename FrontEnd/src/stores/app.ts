@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { clearToken, getToken, setToken, setUserRole, setUserInfo as saveUserInfo, getUserInfo as getStoredUserInfo } from '@/utils/auth'
+import { clearSm2PublicKeyCache } from '@/utils/sm2'
 import type { UserInfo } from '@/types/user'
 
 export const useAppStore = defineStore('app', () => {
@@ -23,6 +24,7 @@ export const useAppStore = defineStore('app', () => {
     userInfo.value = null
     token.value = null
     clearToken()
+    clearSm2PublicKeyCache()
   }
 
   function setUserInfo(info: UserInfo) {

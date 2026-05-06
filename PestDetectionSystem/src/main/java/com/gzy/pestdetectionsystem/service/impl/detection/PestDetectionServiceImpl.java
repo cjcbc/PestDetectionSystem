@@ -10,11 +10,14 @@ import com.gzy.pestdetectionsystem.entity.detection.PestDetection;
 import com.gzy.pestdetectionsystem.exception.BusinessException;
 import com.gzy.pestdetectionsystem.exception.CommonErrorCode;
 import com.gzy.pestdetectionsystem.mapper.detection.PestDetectionMapper;
+import com.gzy.pestdetectionsystem.PestDetectionSystemApplication;
 import com.gzy.pestdetectionsystem.service.detection.PestDetectionService;
 import com.gzy.pestdetectionsystem.utils.SnowflakeIdGenerator;
+import com.gzy.pestdetectionsystem.utils.StoragePathResolver;
 import com.gzy.pestdetectionsystem.vo.detection.PestDetectionVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -41,7 +44,6 @@ public class PestDetectionServiceImpl implements PestDetectionService {
     private static final int STATUS_LOW_CONFIDENCE = 0;
     private static final int STATUS_HIGH_CONFIDENCE = 1;
     private static final String NOT_DETECTED_LABEL = "未检测到病虫害";
-    private static final String PEST_IMAGE_DIR = "D:\\SHU files\\Graduation project\\PestDetectionSystem\\pest-images";
     private static final String ANNOTATED_SUFFIX = "_annotated";
 
     private final PestDetectionMapper pestDetectionMapper;
@@ -52,6 +54,9 @@ public class PestDetectionServiceImpl implements PestDetectionService {
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private final PestDetectionAssembler pestDetectionAssembler;
+
+    @Value("${user.pest-image-path:./pest-images}")
+    private String pestImagesPath;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -128,7 +133,7 @@ public class PestDetectionServiceImpl implements PestDetectionService {
 
     private String saveImageToLocal(Long userId, String imageBase64) {
         try {
-            Path dirPath = Paths.get(PEST_IMAGE_DIR);
+            Path dirPath = resolvePestImageDir();
             Files.createDirectories(dirPath);
 
             String fileName = userId + "_" + System.currentTimeMillis() + ".jpg";
@@ -143,6 +148,13 @@ public class PestDetectionServiceImpl implements PestDetectionService {
             log.error("保存原图失败: {}", e.getMessage(), e);
             throw new BusinessException(CommonErrorCode.LLM_PARAM_INVALID, "保存原图失败");
         }
+    }
+
+    private Path resolvePestImageDir() {
+        return StoragePathResolver.resolveProjectPath(
+                pestImagesPath,
+                PestDetectionSystemApplication.class
+        );
     }
 
     @SuppressWarnings("unchecked")

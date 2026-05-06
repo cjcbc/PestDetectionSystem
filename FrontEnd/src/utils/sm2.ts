@@ -4,7 +4,7 @@
  */
 import { encryptWithSm2PublicKey, resolveSm2PublicKeyUrl } from './sm2-core.js'
 
-const PUB_KEY_CACHE = 'sm2_public_key'
+export const PUB_KEY_CACHE = 'sm2_public_key'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888/api'
 
 /**
@@ -33,6 +33,10 @@ export async function fetchSm2PublicKey(): Promise<string> {
   localStorage.setItem(PUB_KEY_CACHE, pubKey)
   console.log('[LoginDebug][SM2] public key fetched, length:', pubKey.length)
   return pubKey
+}
+
+export function clearSm2PublicKeyCache(): void {
+  localStorage.removeItem(PUB_KEY_CACHE)
 }
 
 /**

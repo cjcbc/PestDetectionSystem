@@ -44,7 +44,8 @@ llm:
   max-tokens:  1024
 
 user:
-  base-path: ${PEST_IMAGES_PATH:./images}
+  base-path: ${USER_IMAGES_PATH:./images}
+  pest-image-path: ${PEST_IMAGES_PATH:./pest-images}
 
 sm2:
   key-path: ${SM2_KEY_PATH:./keys}

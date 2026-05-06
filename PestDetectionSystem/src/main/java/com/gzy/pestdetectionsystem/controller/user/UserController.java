@@ -30,14 +30,12 @@ public class UserController {
     @RateLimit
     @GetMapping("/captcha")
     public Result<VerificationCodeVO> verificationCode() {
-        System.out.println("a");
         return Result.ok(verificationCodeService.create());
     }
 
     @RateLimit
     @PostMapping("/login")
     public Result<UserVO> login(@RequestBody LoginDTO dto) {
-        System.out.println(dto);
         return Result.ok(authService.login(dto));
     }
 
