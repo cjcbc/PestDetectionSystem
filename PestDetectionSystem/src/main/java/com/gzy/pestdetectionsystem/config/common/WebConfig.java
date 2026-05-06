@@ -41,7 +41,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/user/verification-code",
                         "/user/login",
-                        "/user/register"
+                        "/user/register",
+                        "/user/sm2-public-key"
                 );
 
         registry.addInterceptor(rateLimitInterceptor)

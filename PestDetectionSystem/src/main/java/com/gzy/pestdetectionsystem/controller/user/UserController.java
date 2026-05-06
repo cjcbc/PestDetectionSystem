@@ -9,6 +9,7 @@ import com.gzy.pestdetectionsystem.service.user.AuthService;
 import com.gzy.pestdetectionsystem.service.user.UserService;
 import com.gzy.pestdetectionsystem.service.user.VerificationCodeService;
 import com.gzy.pestdetectionsystem.utils.Result;
+import com.gzy.pestdetectionsystem.utils.Sm2KeyManager;
 import com.gzy.pestdetectionsystem.vo.user.UserVO;
 import com.gzy.pestdetectionsystem.vo.user.VerificationCodeVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,7 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
     private final VerificationCodeService verificationCodeService;
+    private final Sm2KeyManager sm2KeyManager;
 
     @RateLimit
     @GetMapping("/verification-code")
@@ -89,6 +91,15 @@ public class UserController {
         String token = (String) request.getAttribute("token");
         userService.logoutUser(request, token);
         return Result.ok("登出成功");
+    }
+
+    /**
+     * 获取SM2公钥（用于前端加密密码）
+     * 无需登录即可访问
+     */
+    @GetMapping("/sm2-public-key")
+    public Result<String> getSm2PublicKey() {
+        return Result.ok(sm2KeyManager.getPublicKeyHex());
     }
 
 }
