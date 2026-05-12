@@ -22,6 +22,16 @@ public interface AuthService {
     public UserVO login(LoginDTO dto);
 
     /**
+     * 临时测试登录（跳过验证码和SM2加密）
+     */
+    UserVO loginSimple(LoginDTO dto);
+
+    /**
+     * 临时测试创建用户（跳过验证码和SM3加密）
+     */
+    void debugCreateUser(String account, String password);
+
+    /**
      * 用户绑定手机号或邮箱
      *
      * @param userId 当前登录用户 ID

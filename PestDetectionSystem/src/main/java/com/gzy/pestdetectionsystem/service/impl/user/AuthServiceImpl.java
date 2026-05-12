@@ -128,6 +128,58 @@ public class AuthServiceImpl implements AuthService {
         return userVO;
     }
 
+    public UserVO loginSimple(LoginDTO dto) {
+        if (Objects.isNull(dto)) {
+            throw new BusinessException(CommonErrorCode.LOGIN_PARAM_INVALID);
+        }
+        log.info("[TEST] 临时登录请求，account={}", dto.getAccount());
+
+        User user = userMapper.selectByAccount(dto.getAccount());
+        if (user == null) {
+            throw new BusinessException(CommonErrorCode.LOGIN_ACCOUNT_NOT_FOUND);
+        }
+        if (user.getStatus() != 1) {
+            throw new BusinessException(CommonErrorCode.USER_BANNED);
+        }
+
+        // 直接用原始密码比较（跳过SM2解密）
+        String plaintextPassword = dto.getEncryptedPassword(); // 这里是原始密码
+        if (!PasswordUtil.verifyPasswordSm3(plaintextPassword, user.getSalt(), user.getPassword())) {
+            throw new BusinessException(CommonErrorCode.LOGIN_PASSWORD_ERROR);
+        }
+
+        String token = JwtUtil.createToken(user.getId(), user.getRole().getId());
+        log.info("[TEST] 临时登录成功，userId={}", user.getId());
+
+        UserVO userVO = userService.getProfile(user.getId());
+        userVO.setToken(token);
+        return userVO;
+    }
+
+    @Override
+    public void debugCreateUser(String account, String password) {
+        log.info("[TEST] 临时创建用户 account={}", account);
+        User existing = userMapper.selectByAccount(account);
+        if (existing != null) {
+            log.info("[TEST] 用户已存在，直接返回");
+            return;
+        }
+        Long id = snowflakeIdGenerator.nextId();
+        String salt = PasswordUtil.generateSalt();
+        String encrypted = PasswordUtil.encryptPasswordSm3(password, salt);
+        User user = new User();
+        user.setId(id);
+        user.setUsername("test_" + account);
+        user.setEmail(account.contains("@") ? account : null);
+        user.setPhone(account.contains("@") ? null : account);
+        user.setPassword(encrypted);
+        user.setSalt(salt);
+        user.setStatus(1);
+        user.setCreatedTime(System.currentTimeMillis());
+        userMapper.insert(user);
+        log.info("[TEST] 用户创建成功 userId={}", id);
+    }
+
 
     //绑定手机号或邮箱
     @Override

@@ -36,6 +36,7 @@ export const useChatStore = defineStore('chat', () => {
   const isSending = ref(false)
   /** 流式输出中的中间状态 — 不触发 messages 响应式更新 */
   const streamingContent = ref('')
+  const streamingReasoningContent = ref('')
   const isStreaming = ref(false)
   /** 流式期间用户消息的临时 ID */
   const streamingUserMsgId = ref<string | null>(null)
@@ -94,6 +95,7 @@ export const useChatStore = defineStore('chat', () => {
     // 记录流式消息 ID & 清空流式缓冲
     streamingUserMsgId.value = tempUserMessage.id
     streamingContent.value = ''
+    streamingReasoningContent.value = ''
     isSending.value = true
     isStreaming.value = true
 
@@ -108,6 +110,9 @@ export const useChatStore = defineStore('chat', () => {
         (delta: string) => {
           streamingContent.value += delta
         },
+        (delta: string) => {
+          streamingReasoningContent.value += delta
+        },
         // onDone: 流结束 — 用真实数据替换临时消息
         async () => {
           isStreaming.value = false
@@ -118,12 +123,15 @@ export const useChatStore = defineStore('chat', () => {
             fetchSessions(),
             fetchQuota()
           ])
+          streamingContent.value = ''
+          streamingReasoningContent.value = ''
         },
         // onError
         (err: string) => {
           isStreaming.value = false
           isSending.value = false
           streamingUserMsgId.value = null
+          streamingReasoningContent.value = ''
           // 移除临时用户消息
           messages.value = messages.value.filter(
             (m) => m.id !== tempUserMessage.id
@@ -135,6 +143,7 @@ export const useChatStore = defineStore('chat', () => {
       isStreaming.value = false
       isSending.value = false
       streamingUserMsgId.value = null
+      streamingReasoningContent.value = ''
       messages.value = messages.value.filter(
         (m) => m.id !== tempUserMessage.id
       )
@@ -167,6 +176,7 @@ export const useChatStore = defineStore('chat', () => {
     isSending,
     isStreaming,
     streamingContent,
+    streamingReasoningContent,
     streamingUserMsgId,
     currentSession,
     fetchSessions,

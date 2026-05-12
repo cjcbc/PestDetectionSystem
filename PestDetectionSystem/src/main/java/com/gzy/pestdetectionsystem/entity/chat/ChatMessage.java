@@ -21,6 +21,7 @@ public class ChatMessage {
     private Long detectionId;
     private String role;
     private String content;
+    private String reasoningContent;
     private String model;
     private Integer promptTokens;
     private Integer completionTokens;

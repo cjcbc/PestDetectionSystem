@@ -21,6 +21,7 @@ export interface ChatMessage {
   detectionId?: string | null
   role: ChatRole
   content: string
+  reasoningContent?: string | null
   model: string | null
   promptTokens: number
   completionTokens: number

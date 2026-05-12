@@ -45,7 +45,7 @@
             <p>向 AI 专家提问，获取病虫害识别与田间管理建议</p>
           </div>
 
-          <template v-for="message in chatStore.messages" :key="message.id">
+          <template v-for="message in renderedMessages" :key="message.id">
             <!-- 用户消息 -->
             <div v-if="message.role === 'user'" class="chatgpt-msg chatgpt-msg--user">
               <div class="chatgpt-msg__row">
@@ -66,8 +66,24 @@
                   <span>AI</span>
                 </div>
                 <div class="chatgpt-msg__content">
+                  <el-collapse
+                    v-if="message.reasoning"
+                    v-model="reasoningExpanded"
+                    class="chatgpt-reasoning"
+                  >
+                    <el-collapse-item :name="reasoningCollapseName(message.id)">
+                      <template #title>
+                        <span class="chatgpt-reasoning__title">推理过程</span>
+                      </template>
+                      <MarkdownRenderer
+                        :content="message.reasoning"
+                        :is-streaming="false"
+                      />
+                    </el-collapse-item>
+                  </el-collapse>
                   <MarkdownRenderer
-                    :content="message.content"
+                    v-if="message.displayContent"
+                    :content="message.displayContent"
                     :is-streaming="false"
                   />
                 </div>
@@ -77,14 +93,30 @@
           </template>
 
           <!-- 流式 AI 消息（独立渲染，不走 messages 数组） -->
-          <div v-if="chatStore.isStreaming && chatStore.streamingContent" class="chatgpt-msg chatgpt-msg--assistant">
+          <div v-if="chatStore.isStreaming && streamingDisplayContent" class="chatgpt-msg chatgpt-msg--assistant">
             <div class="chatgpt-msg__row">
               <div class="chatgpt-msg__avatar chatgpt-msg__avatar--ai">
                 <span>AI</span>
               </div>
               <div class="chatgpt-msg__content">
+                <el-collapse
+                  v-if="chatStore.streamingReasoningContent"
+                  v-model="reasoningExpanded"
+                  class="chatgpt-reasoning"
+                >
+                  <el-collapse-item :name="STREAMING_REASONING_NAME">
+                    <template #title>
+                      <span class="chatgpt-reasoning__title">推理过程</span>
+                    </template>
+                    <MarkdownRenderer
+                      :content="chatStore.streamingReasoningContent"
+                      :is-streaming="true"
+                    />
+                  </el-collapse-item>
+                </el-collapse>
                 <MarkdownRenderer
-                  :content="chatStore.streamingContent"
+                  v-if="streamingMainContent"
+                  :content="streamingMainContent"
                   :is-streaming="true"
                 />
               </div>
@@ -92,7 +124,7 @@
           </div>
 
           <!-- 思考中占位（流式开始但尚无内容） -->
-          <div v-else-if="chatStore.isStreaming && !chatStore.streamingContent" class="chatgpt-msg chatgpt-msg--assistant">
+          <div v-else-if="chatStore.isStreaming && !streamingDisplayContent" class="chatgpt-msg chatgpt-msg--assistant">
             <div class="chatgpt-msg__row">
               <div class="chatgpt-msg__avatar chatgpt-msg__avatar--ai">
                 <span>AI</span>
@@ -153,6 +185,7 @@ import { isLoggedIn } from '@/utils/auth'
 import { useChatStore } from '@/stores/chat'
 import { isMessageHandled } from '@/api/request'
 import { formatMessageTime } from '@/utils/format'
+import { splitReasoningContent } from '@/utils/chatReasoning'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { RATE_LIMIT_KEYS, useRateLimitCountdown } from '@/composables/useRateLimit'
 
@@ -165,6 +198,8 @@ const userIsLoggedIn = computed(() => isLoggedIn())
 const draft = ref('')
 const messageContainer = ref<HTMLElement | null>(null)
 const messagesEnd = ref<HTMLElement | null>(null)
+const STREAMING_REASONING_NAME = 'streaming-reason'
+const reasoningExpanded = ref<string[]>([])
 const chatLimit = useRateLimitCountdown(RATE_LIMIT_KEYS.chatStream)
 const sendButtonText = computed(() =>
   chatLimit.isLimited.value ? `请稍候 ${chatLimit.remainingSeconds.value}s` : ''
@@ -178,6 +213,25 @@ const detectionId = computed(() => {
 })
 
 const sessionTitle = computed(() => chatStore.currentSession?.title || '会话详情')
+const renderedMessages = computed(() =>
+  chatStore.messages.map((message) => {
+    const parts = splitReasoningContent(message.content, message.reasoningContent)
+    return {
+      ...message,
+      reasoning: parts.reasoning,
+      displayContent: parts.content
+    }
+  })
+)
+const streamingDisplayContent = computed(() =>
+  chatStore.streamingContent || chatStore.streamingReasoningContent
+)
+const isStreamingReasoningExpanded = computed(() =>
+  reasoningExpanded.value.includes(STREAMING_REASONING_NAME)
+)
+const streamingMainContent = computed(() =>
+  chatStore.streamingContent || (isStreamingReasoningExpanded.value ? '' : chatStore.streamingReasoningContent)
+)
 
 const quotaText = computed(() => {
   const quota = chatStore.quota
@@ -202,6 +256,16 @@ function scrollToBottom(smooth = false) {
       }
     }
   })
+}
+
+function reasoningCollapseName(messageId: string) {
+  return `reasoning-${messageId}`
+}
+
+function closeStreamingReasoning() {
+  reasoningExpanded.value = reasoningExpanded.value.filter(
+    (name) => name !== STREAMING_REASONING_NAME
+  )
 }
 
 async function loadCurrentSession() {
@@ -301,9 +365,18 @@ function throttledScrollToBottom() {
 }
 
 watch(
-  () => chatStore.streamingContent,
+  streamingDisplayContent,
   () => {
     throttledScrollToBottom()
+  }
+)
+
+watch(
+  () => chatStore.streamingReasoningContent,
+  (value, oldValue) => {
+    if (value && !oldValue && !reasoningExpanded.value.includes(STREAMING_REASONING_NAME)) {
+      reasoningExpanded.value = [...reasoningExpanded.value, STREAMING_REASONING_NAME]
+    }
   }
 )
 
@@ -319,6 +392,15 @@ watch(
   (val) => {
     if (!val) {
       nextTick(() => scrollToBottom(true))
+    }
+  }
+)
+
+watch(
+  () => chatStore.isStreaming,
+  (val) => {
+    if (!val) {
+      closeStreamingReasoning()
     }
   }
 )
@@ -535,6 +617,38 @@ onMounted(() => {
   padding: 14px 18px;
   border-radius: 4px 18px 18px 18px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.chatgpt-reasoning {
+  margin: -2px 0 10px;
+  border-top: none;
+  border-bottom-color: #ebeef5;
+}
+
+.chatgpt-reasoning :deep(.el-collapse-item__header) {
+  height: 32px;
+  border-bottom: none;
+  color: #606266;
+  font-size: 13px;
+  line-height: 32px;
+}
+
+.chatgpt-reasoning :deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+}
+
+.chatgpt-reasoning :deep(.el-collapse-item__content) {
+  padding-bottom: 10px;
+}
+
+.chatgpt-reasoning__title {
+  font-size: 13px;
+  color: #606266;
+}
+
+.chatgpt-reasoning :deep(.markdown-content) {
+  color: #606266;
+  font-size: 14px;
 }
 
 .chatgpt-msg__text {

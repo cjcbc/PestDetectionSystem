@@ -1,4 +1,5 @@
 import request, { handleAuthExpired } from './request'
+import { dispatchSseEvent } from './chat-sse'
 import { RATE_LIMIT_KEYS, RATE_LIMIT_SECONDS, setRateLimited } from '@/composables/useRateLimit'
 import { showWarning } from '@/utils/message'
 import type {
@@ -42,6 +43,7 @@ export function getQuota(): Promise<ChatQuota> {
 export async function sendMessageStream(
   payload: SendMessagePayload,
   onDelta: (text: string) => void,
+  onReasoning: (text: string) => void,
   onDone: () => void,
   onError: (err: string) => void
 ): Promise<void> {
@@ -91,6 +93,7 @@ export async function sendMessageStream(
   // SSE 解析状态
   let currentEvent = ''
   let currentDataLines: string[] = []
+  const callbacks = { onDelta, onReasoning, onDone, onError }
 
   while (true) {
     const { done, value } = await reader.read()
@@ -108,18 +111,9 @@ export async function sendMessageStream(
         if (currentDataLines.length > 0) {
           // 多个 data: 行合并时用 \n 连接（SSE 规范）
           const fullData = currentDataLines.join('\n')
-
-          if (currentEvent === 'done') {
-            onDone()
+          const result = dispatchSseEvent(currentEvent, fullData, callbacks)
+          if (result === 'stop') {
             return
-          } else if (currentEvent === 'error') {
-            onError(fullData)
-            return
-          } else {
-            // delta 或默认事件
-            if (fullData) {
-              onDelta(fullData)
-            }
           }
         }
         // 重置当前事件
@@ -140,12 +134,9 @@ export async function sendMessageStream(
   // 处理 buffer 中残留的最后一个事件
   if (currentDataLines.length > 0) {
     const fullData = currentDataLines.join('\n')
-    if (currentEvent === 'done') {
-      onDone()
+    const result = dispatchSseEvent(currentEvent, fullData, callbacks)
+    if (result === 'stop') {
       return
-    }
-    if (fullData) {
-      onDelta(fullData)
     }
   }
 

@@ -39,6 +39,27 @@ public class UserController {
         return Result.ok(authService.login(dto));
     }
 
+    /**
+     * 临时测试登录接口（跳过验证码和SM2加密）
+     * 仅用于本地调试
+     */
+    @RateLimit
+    @PostMapping("/login-simple")
+    public Result<UserVO> loginSimple(@RequestBody LoginDTO dto) {
+        return Result.ok(authService.loginSimple(dto));
+    }
+
+    /**
+     * 临时测试创建用户（跳过验证码和加密）
+     * 仅用于本地调试
+     */
+    @RateLimit
+    @PostMapping("/debug-create-user")
+    public Result<?> debugCreateUser(@RequestBody LoginDTO dto) {
+        authService.debugCreateUser(dto.getAccount(), dto.getEncryptedPassword());
+        return Result.ok("创建成功");
+    }
+
     @RateLimit
     @PostMapping("/register")
     public Result<?> register(@Valid @RequestBody RegisterDTO dto){

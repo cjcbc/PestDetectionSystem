@@ -133,7 +133,7 @@ const handleSubmit = async () => {
     const payload: ChangePasswordPayload = {
       oldPassword: await sm2EncryptPassword(form.oldPassword),
       newPassword: await sm2EncryptPassword(form.newPassword),
-      confirmPassword: form.confirmPassword
+      confirmPassword: await sm2EncryptPassword(form.confirmPassword)
     }
 
     if (props.isAdmin) {

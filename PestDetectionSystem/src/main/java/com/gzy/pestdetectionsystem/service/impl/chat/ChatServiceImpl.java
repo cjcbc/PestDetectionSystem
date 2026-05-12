@@ -231,7 +231,7 @@ public class ChatServiceImpl implements ChatService {
 
         // 3. 保存用户消息
         ChatMessage userMsg = buildMessage(session.getId(), userId, detectionId, "user",
-                dto.getMessage(), null, 0, 0, 0, 1, now);
+                dto.getMessage(), null, null, 0, 0, 0, 1, now);
         chatMessageMapper.insert(userMsg);
 
         // 4. 构建历史上下文（取最近 MAX_HISTORY_MESSAGES 条已成功的消息）
@@ -260,7 +260,7 @@ public class ChatServiceImpl implements ChatService {
         // 7. 保存 AI 回复
         long replyTime = System.currentTimeMillis();
         ChatMessage assistantMsg = buildMessage(session.getId(), userId, detectionId, "assistant",
-                answer, llmResp.getModel(), promptTokens, completionTokens, totalTokens, 1, replyTime);
+                answer, null, llmResp.getModel(), promptTokens, completionTokens, totalTokens, 1, replyTime);
         chatMessageMapper.insert(assistantMsg);
 
         // 8. 更新会话统计
@@ -319,7 +319,7 @@ public class ChatServiceImpl implements ChatService {
 
         // 3. 保存用户消息
         ChatMessage userMsg = buildMessage(session.getId(), userId, detectionId, "user",
-                dto.getMessage(), null, 0, 0, 0, 1, now);
+                dto.getMessage(), null, null, 0, 0, 0, 1, now);
         chatMessageMapper.insert(userMsg);
 
         // 4. 构建历史上下文
@@ -333,6 +333,7 @@ public class ChatServiceImpl implements ChatService {
 
         // 用于累积完整回复内容和 token 统计
         StringBuilder contentBuilder = new StringBuilder();
+        StringBuilder reasoningBuilder = new StringBuilder();
         AtomicReference<String> modelRef = new AtomicReference<>("");
         AtomicReference<LlmUsageDTO> usageRef = new AtomicReference<>(null);
 
@@ -360,13 +361,23 @@ public class ChatServiceImpl implements ChatService {
 
                                 if (chunk.getChoices() != null && !chunk.getChoices().isEmpty()) {
                                     LlmStreamChoiceDTO choice = chunk.getChoices().get(0);
-                                    if (choice.getDelta() != null && choice.getDelta().getContent() != null) {
+                                    if (choice.getDelta() != null) {
                                         String delta = choice.getDelta().getContent();
-                                        contentBuilder.append(delta);
-                                        // 发送增量文本给前端
-                                        emitter.send(SseEmitter.event()
-                                                .name("delta")
-                                                .data(delta));
+                                        String reasoning = choice.getDelta().getReasoningContent();
+
+                                        if (reasoning != null && !reasoning.isBlank()) {
+                                            reasoningBuilder.append(reasoning);
+                                            contentBuilder.append(reasoning);
+                                            emitter.send(SseEmitter.event()
+                                                    .name("reasoning")
+                                                    .data(reasoning));
+                                        } else if (delta != null && !delta.isBlank()) {
+                                            contentBuilder.append(delta);
+                                            // 发送增量文本给前端
+                                            emitter.send(SseEmitter.event()
+                                                    .name("delta")
+                                                    .data(delta));
+                                        }
                                     }
                                 }
                             } catch (IOException e) {
@@ -399,7 +410,7 @@ public class ChatServiceImpl implements ChatService {
 
                                 long replyTime = System.currentTimeMillis();
                                 ChatMessage assistantMsg = buildMessage(session.getId(), userId, finalDetectionId, "assistant",
-                                        fullContent, modelRef.get(), pt, ct, tt, 1, replyTime);
+                                        fullContent, blankToNull(reasoningBuilder.toString()), modelRef.get(), pt, ct, tt, 1, replyTime);
                                 chatMessageMapper.insert(assistantMsg);
 
                                 // 更新会话统计
@@ -527,7 +538,7 @@ public class ChatServiceImpl implements ChatService {
 
     /** 构建 ChatMessage 实体 */
     private ChatMessage buildMessage(Long sessionId, Long userId, Long detectionId, String role,
-                                     String content, String model,
+                                     String content, String reasoningContent, String model,
                                      int promptTokens, int completionTokens, int totalTokens,
                                      int status, long createdTime) {
         ChatMessage msg = new ChatMessage();
@@ -537,6 +548,7 @@ public class ChatServiceImpl implements ChatService {
         msg.setDetectionId(detectionId);
         msg.setRole(role);
         msg.setContent(content);
+        msg.setReasoningContent(reasoningContent);
         msg.setModel(model);
         msg.setPromptTokens(promptTokens);
         msg.setCompletionTokens(completionTokens);
@@ -554,6 +566,10 @@ public class ChatServiceImpl implements ChatService {
         return val != null ? val.intValue() : 0;
     }
 
+    private String blankToNull(String val) {
+        return val != null && !val.isBlank() ? val : null;
+    }
+
 
     private ChatSessionVO toSessionVO(ChatSession s) {
         return new ChatSessionVO(String.valueOf(s.getId()), s.getTitle(), s.getScene(),
@@ -567,6 +583,7 @@ public class ChatServiceImpl implements ChatService {
                 m.getDetectionId() != null ? String.valueOf(m.getDetectionId()) : null,
                 m.getRole(),
                 m.getContent(),
+                m.getReasoningContent(),
                 m.getModel(),
                 m.getPromptTokens(),
                 m.getCompletionTokens(),

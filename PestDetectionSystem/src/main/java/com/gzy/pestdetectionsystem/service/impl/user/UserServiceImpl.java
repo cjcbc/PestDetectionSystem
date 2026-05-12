@@ -208,29 +208,15 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(CommonErrorCode.BIND_USER_NOT_EXISTS);
         }
 
-        // 解密前端传来的SM2加密密码（旧密码）
-        String plaintextOldPassword;
-        if (dto.getOldPassword() != null && dto.getOldPassword().length() > 50) {
-            // 认为是SM2加密的base64字符串
-            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getOldPassword()));
-            plaintextOldPassword = new String(decrypted, StandardCharsets.UTF_8);
-        } else {
-            plaintextOldPassword = dto.getOldPassword();
-        }
+        String plaintextOldPassword = resolvePasswordPayload(dto.getOldPassword());
 
         // 验证旧密码（数据库里存的是SM3）
         if (!PasswordUtil.verifyPasswordSm3(plaintextOldPassword, user.getSalt(), user.getPassword())) {
             throw new BusinessException(CommonErrorCode.CHANGE_PASSWORD_OLD_PASSWORD_WRONG);
         }
 
-        // 解密前端传来的SM2加密密码（新密码）
-        String plaintextNewPassword;
-        if (dto.getNewPassword() != null && dto.getNewPassword().length() > 50) {
-            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(dto.getNewPassword()));
-            plaintextNewPassword = new String(decrypted, StandardCharsets.UTF_8);
-        } else {
-            plaintextNewPassword = dto.getNewPassword();
-        }
+        String plaintextNewPassword = resolvePasswordPayload(dto.getNewPassword());
+        String plaintextConfirmPassword = resolvePasswordPayload(dto.getConfirmPassword());
 
         // 检查新密码是否与原密码相同
         if (PasswordUtil.verifyPasswordSm3(plaintextNewPassword, user.getSalt(), user.getPassword())) {
@@ -238,7 +224,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 检查两次输入的新密码是否一致
-        if (!plaintextNewPassword.equals(dto.getConfirmPassword())) {
+        if (!plaintextNewPassword.equals(plaintextConfirmPassword)) {
             throw new BusinessException(CommonErrorCode.CHANGE_PASSWORD_NOT_MATCH);
         }
 
@@ -251,6 +237,19 @@ public class UserServiceImpl implements UserService {
         user.setPassword(newEncryptedPassword);
         userMapper.updateById(user);
         log.info("用户 {} 密码已修改", userId);
+    }
+
+    private String resolvePasswordPayload(String passwordPayload) {
+        if (passwordPayload.length() <= 50) {
+            return passwordPayload;
+        }
+
+        try {
+            byte[] decrypted = sm2KeyManager.decrypt(Base64.getDecoder().decode(passwordPayload));
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (RuntimeException e) {
+            throw new BusinessException(CommonErrorCode.CHANGE_PASSWORD_PARAM_INVALID);
+        }
     }
 
     @Override

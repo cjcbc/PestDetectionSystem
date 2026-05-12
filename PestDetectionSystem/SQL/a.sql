@@ -115,6 +115,7 @@ CREATE TABLE `chat_message` (
   `user_id` bigint unsigned NOT NULL COMMENT '所属用户ID',
   `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息角色：system、user、assistant',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息内容',
+  `reasoning_content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '推理内容',
   `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '本次调用使用的模型名称',
   `prompt_tokens` int unsigned NOT NULL DEFAULT '0' COMMENT '输入token数',
   `completion_tokens` int unsigned NOT NULL DEFAULT '0' COMMENT '输出token数',

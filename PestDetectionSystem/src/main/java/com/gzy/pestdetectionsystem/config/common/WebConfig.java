@@ -42,6 +42,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/user/captcha",
                         "/user/login",
+                        "/user/login-simple",
+                        "/user/debug-create-user",
                         "/user/register",
                         "/user/sm2-public-key"
                 );
