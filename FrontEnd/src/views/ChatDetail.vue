@@ -226,12 +226,7 @@ const renderedMessages = computed(() =>
 const streamingDisplayContent = computed(() =>
   chatStore.streamingContent || chatStore.streamingReasoningContent
 )
-const isStreamingReasoningExpanded = computed(() =>
-  reasoningExpanded.value.includes(STREAMING_REASONING_NAME)
-)
-const streamingMainContent = computed(() =>
-  chatStore.streamingContent || (isStreamingReasoningExpanded.value ? '' : chatStore.streamingReasoningContent)
-)
+const streamingMainContent = computed(() => chatStore.streamingContent)
 
 const quotaText = computed(() => {
   const quota = chatStore.quota

@@ -331,9 +331,8 @@ public class ChatServiceImpl implements ChatService {
         final Long finalDetectionId = detectionId;
         final ObjectMapper objectMapper = new ObjectMapper();
 
-        // 用于累积完整回复内容和 token 统计
-        StringBuilder contentBuilder = new StringBuilder();
-        StringBuilder reasoningBuilder = new StringBuilder();
+        // 用于累积回复内容、推理内容和 token 统计
+        ChatStreamContentAccumulator contentAccumulator = new ChatStreamContentAccumulator();
         AtomicReference<String> modelRef = new AtomicReference<>("");
         AtomicReference<LlmUsageDTO> usageRef = new AtomicReference<>(null);
 
@@ -366,13 +365,12 @@ public class ChatServiceImpl implements ChatService {
                                         String reasoning = choice.getDelta().getReasoningContent();
 
                                         if (reasoning != null && !reasoning.isBlank()) {
-                                            reasoningBuilder.append(reasoning);
-                                            contentBuilder.append(reasoning);
+                                            contentAccumulator.appendReasoning(reasoning);
                                             emitter.send(SseEmitter.event()
                                                     .name("reasoning")
                                                     .data(reasoning));
                                         } else if (delta != null && !delta.isBlank()) {
-                                            contentBuilder.append(delta);
+                                            contentAccumulator.appendContent(delta);
                                             // 发送增量文本给前端
                                             emitter.send(SseEmitter.event()
                                                     .name("delta")
@@ -399,7 +397,7 @@ public class ChatServiceImpl implements ChatService {
                         () -> {
                             // 流结束：保存 AI 回复、更新统计
                             try {
-                                String fullContent = contentBuilder.toString();
+                                String fullContent = contentAccumulator.getReplyContent();
                                 LlmUsageDTO usage = usageRef.get();
                                 int pt = 0, ct = 0, tt = 0;
                                 if (usage != null) {
@@ -410,7 +408,7 @@ public class ChatServiceImpl implements ChatService {
 
                                 long replyTime = System.currentTimeMillis();
                                 ChatMessage assistantMsg = buildMessage(session.getId(), userId, finalDetectionId, "assistant",
-                                        fullContent, blankToNull(reasoningBuilder.toString()), modelRef.get(), pt, ct, tt, 1, replyTime);
+                                        fullContent, blankToNull(contentAccumulator.getReasoningContent()), modelRef.get(), pt, ct, tt, 1, replyTime);
                                 chatMessageMapper.insert(assistantMsg);
 
                                 // 更新会话统计

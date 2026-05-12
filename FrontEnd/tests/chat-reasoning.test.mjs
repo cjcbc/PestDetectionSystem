@@ -39,4 +39,20 @@ assert.deepEqual(
   }
 )
 
+assert.deepEqual(
+  splitReasoningContent('', '仅推理内容'),
+  {
+    reasoning: '仅推理内容',
+    content: ''
+  }
+)
+
+assert.deepEqual(
+  splitReasoningContent('推理过程\n\n正式回答', '推理过程'),
+  {
+    reasoning: '推理过程',
+    content: '正式回答'
+  }
+)
+
 console.log('chat reasoning compatibility checks passed')

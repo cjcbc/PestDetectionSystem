@@ -37,9 +37,9 @@ jwt:
 
 llm:
   base-url: https://api.chijiao-ai.top/v1
-  api-key: sk-Y
+  api-key: sk-Yv53rLU6WMaMuc0nwbBf26XKabvk1yydr1i6ErLgACnE2f8o
   chat-path: /chat/completions
-  model: claude-haiku-4-5
+  model: MiniMax-M2.7
   temperature: 1.0
   max-tokens:  1024
 

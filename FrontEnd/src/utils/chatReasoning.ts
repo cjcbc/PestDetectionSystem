@@ -16,9 +16,15 @@ export function splitReasoningContent(
     : rawContent
 
   if (reasoningContent && reasoningContent.trim()) {
+    const normalizedReasoning = reasoningContent.trim()
+    const normalizedContent = contentWithoutLegacyThink.trimStart()
+    const displayContent = normalizedContent.startsWith(normalizedReasoning)
+      ? normalizedContent.slice(normalizedReasoning.length).trim()
+      : contentWithoutLegacyThink
+
     return {
       reasoning: reasoningContent,
-      content: contentWithoutLegacyThink
+      content: displayContent
     }
   }
 
